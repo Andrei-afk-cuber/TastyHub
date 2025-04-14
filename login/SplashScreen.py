@@ -1,15 +1,15 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import Label
 from PIL import Image, ImageTk, ImageSequence
 
 class SplashScreen:
-    def __init__(self, root, gif_path, duration):
+    def __init__(self, root, duration):
         self.root = root
-        self.gif_path = gif_path
+        self.gif_path = "../animations/welcome_video.gif"
         self.duration = duration
 
         # Создаем окно для стартового экрана
-        self.splash = tk.Toplevel(root)
+        self.splash = ctk.CTkToplevel(root)
         self.splash.overrideredirect(True)  # Убираем рамку окна
         self.splash.geometry("+{}+{}".format(
             root.winfo_screenwidth() // 2 - 200,  # Центрируем окно
@@ -17,7 +17,7 @@ class SplashScreen:
         ))
 
         # Загружаем GIF
-        self.gif = Image.open(gif_path)
+        self.gif = Image.open(self.gif_path)
         self.frames = [ImageTk.PhotoImage(frame) for frame in ImageSequence.Iterator(self.gif)]
 
         # Отображаем первый кадр
@@ -50,14 +50,6 @@ class SplashScreen:
     def start_main_program(self):
         """Запуск основной программы."""
 
-# Основное окно
-root = tk.Tk()
-root.title("Основное окно")
-root.geometry("400x300")
-root.withdraw()  # Скрываем основное окно до завершения стартового экрана
-
 # Создаем стартовый экран
-splash = SplashScreen(root, "animations/welcome_video.gif", 3000)  # 3000 мс = 3 секунды
-
-# Запуск основного цикла
+splash = SplashScreen(root, 3000)  # 3000 мс = 3 секунды
 root.mainloop()
