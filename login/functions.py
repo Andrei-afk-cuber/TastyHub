@@ -1,24 +1,25 @@
 import sqlite3
 
-# Function for check password
+# Функция для показа/скрытия пароля при нажатии check_box
 def toggle_password(p_block, show_password_var):
     if show_password_var.get():
         p_block.configure(show="")
     else:
         p_block.configure(show="*")
 
+# Функция создания соединения с БД
 def get_database_connection():
-    # Open a database connection
+    # Открываем соединение с БД
     db = sqlite3.connect('users_database.db')
     cursor = db.cursor()
     return db, cursor
 
 def close_database_connection(db):
-    # Close the database connection
+    # Закрываем соединение с БД
     if db:
         db.close()
 
-# Function for check username and password
+# Функция для проверки наличия пароля и логина в БД
 def check_login(username, password):
     db, cursor = get_database_connection()
     try:
@@ -42,10 +43,11 @@ def check_login(username, password):
     # Return False for unsuccessful login
     return False
 
+# Функция регистрации пользователя
 def register_user(username, password):
     db, cursor = get_database_connection()
     try:
-        # Create a Users table if it doesn't exist
+        # Создание таблицы users если она не найдена
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,16 +56,16 @@ def register_user(username, password):
         )
         """)
 
-        # Insert user data into the Users table
+        # Вставляем данные пользователя в БД
         cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
 
-        # Commit the changes and close the database connection
+        # Сохраняем изменения и делаем их коммит
         db.commit()
 
-        return True # Registration successful
+        return True # Регистрация прошла успешно
 
     except sqlite3.IntegrityError:
-        return False # Username or email is already in use
+        return False # В случае, если данные уже существуют в БД
 
     finally:
         close_database_connection(db)

@@ -4,6 +4,7 @@ from .functions import toggle_password, check_login, register_user
 from .config import theme
 from tkinter import messagebox
 
+# Класс основного фрейма приложения
 class MainFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
@@ -11,6 +12,7 @@ class MainFrame(ctk.CTkFrame):
 
         self.setup_login_frame()
 
+    # Функция для отрисовки основного фрейма
     def setup_login_frame(self):
         # Create login frame
         self.login_frame = ctk.CTkFrame(master=self, width=320, height=380)
@@ -99,20 +101,22 @@ class MainFrame(ctk.CTkFrame):
         )
         self.register_button.place(x=110, y=270)
 
+    # Функция для проверки пароля и логина
     def check_login_credentials(self):
-        # Get the username and password from the input fields
+        # Получаем из полей ввода логин и пароль
         username = self.u_block.get()
         password = self.p_block.get()
 
-        # Call the check_login function from functions.py
+        # Вызов функции check_login
         if check_login(username, password):
-            # Login successful, open LoggedInFrame
+            # Успешный логин
             print("Login Successful")
             self.master.open_loggedin_frame()
         else:
-            # Login failed, show an error message
+            # Неуспешный логин
             self.error_label.configure(text="Invalid username or password")
 
+# Класс фрейма регистрации
 class RegistrationFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
@@ -120,6 +124,7 @@ class RegistrationFrame(ctk.CTkFrame):
 
         self.setup_register_frame()
 
+    # Метод отрисовки фрейма регистрации
     def setup_register_frame(self):
         self.master.change_title("Register")
         # Create the registration frame
@@ -179,6 +184,7 @@ class RegistrationFrame(ctk.CTkFrame):
         )
         self.register_button.place(x=110, y=340)
 
+    # Метод для регистрации нового пользователя
     def new_user_data(self):
         username = self.username_entry.get()
         password = self.p_block.get()
@@ -201,6 +207,7 @@ class RegistrationFrame(ctk.CTkFrame):
             messagebox.showerror("Error", "Username or password is already in use")
             return
 
+# Класс фрейма после авторизации
 class LoggedInFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
