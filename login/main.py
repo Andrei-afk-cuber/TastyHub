@@ -1,7 +1,7 @@
-from app import MainApp
+from .app import LoginMainApp
 
 if __name__ == '__main__':
-    app = MainApp()
+    app = LoginMainApp()
     app.mainloop()
 
 """

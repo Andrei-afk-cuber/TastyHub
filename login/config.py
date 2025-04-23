@@ -1,5 +1,6 @@
 theme = {
     'fg_color':'#e06b04',
     'hover_color':'#b55604',
-    'text_color':'#ffffff'
+    'text_color':'#ffffff',
+    'textbox_bg_color':"#171717"
 }

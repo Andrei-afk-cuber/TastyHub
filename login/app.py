@@ -1,12 +1,15 @@
 import customtkinter as tk
 from .frames import MainFrame, RegistrationFrame
+from .classes import User
 
 # Основное окно приложения
-class MainApp(tk.CTk):
-    def __init__(self):
+class LoginMainApp(tk.CTk):
+    def __init__(self, main_program_class):
         super().__init__()
 
-        self.geometry(f"600x400")   # Standard size 600x400
+        self.main_program_class = main_program_class
+
+        self.geometry(f"600x400+550+250")   # Standard size 600x400
         self.title("Sign into your account")
         self.iconbitmap("images/icon.ico")
         # Create the main frame
@@ -40,13 +43,29 @@ class MainApp(tk.CTk):
         self.main_frame = MainFrame(self)
         self.main_frame.pack(fill="both", expand=True)
 
-    # Функция для открытия фрейма после аутентификации
-    def open_loggedin_frame(self):
-        # Уничтожаем основной фрейм
-        self.main_frame.destroy()
+    # Функция для открытия основного приложения после аутентификации
+    # def open_main_program(self, username, password, admin=False):
+    #     # Уничтожаем основной фрейм
+    #     user = User(username, password, admin)
+    #
+    #     self.main_program = self.main_program_class(user)
+    #
+    #     self.main_frame.destroy()
+    #     self.destroy()
+    #     self.main_program.mainloop()
+
+    def open_main_program(self, username, password, admin=False):
+        user = User(username, password, admin)
+        self.destroy()
+        self.main_program = self.main_program_class(user)
+        self.main_program.mainloop()
 
     def destroy_all_frames(self):
         # Удаляем все фреймы, которые есть в словаре
         for frame_name, frame in self.frames.items():
             frame.destroy()
         self.frames = {}
+
+"""
+Если будет ошибка связанная с классами, то придется вернуть сюда класс User
+"""

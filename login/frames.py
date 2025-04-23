@@ -111,7 +111,7 @@ class MainFrame(ctk.CTkFrame):
         if check_login(username, password):
             # Успешный логин
             print("Login Successful")
-            self.master.open_loggedin_frame()
+            self.master.open_main_program(username, password)
         else:
             # Неуспешный логин
             self.error_label.configure(text="Invalid username or password")
@@ -164,6 +164,7 @@ class RegistrationFrame(ctk.CTkFrame):
         )
         self.username_entry.place(x=50, y=100)
 
+        self.show_password_var = ctk.BooleanVar()
         self.p_block = ctk.CTkEntry(
             master=self.registration_frame,
             width=220,
@@ -171,6 +172,18 @@ class RegistrationFrame(ctk.CTkFrame):
             show="*"
         )
         self.p_block.place(x=50, y=140)
+
+        # checkbox for showing password
+        self.show_password = ctk.CTkCheckBox(
+            master=self.registration_frame,
+            text="Show Password",
+            font=('Century Gothic', 12),
+            command=lambda: toggle_password(self.p_block, self.show_password_var),  # ченкуть зачем тут лямбда
+            variable=self.show_password_var,
+            fg_color=theme['fg_color'],
+            hover_color=theme['hover_color'],
+        )
+        self.show_password.place(x=50, y=190)
 
         self.register_button = ctk.CTkButton(
             master=self.registration_frame,
