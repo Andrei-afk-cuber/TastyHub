@@ -4,7 +4,7 @@ from classes import User
 
 # Основное окно приложения
 class MainApp(ctk.CTk):
-    def __init__(self, user=User("Andrei", 0000, False)):
+    def __init__(self, user=User("test_user", 0000, False)):
         super().__init__()
 
         self.user = user

@@ -1,3 +1,5 @@
+from doctest import master
+
 import customtkinter as ctk
 from customtkinter import CTkLabel
 from login.config import theme
@@ -66,6 +68,13 @@ class MainFrame(ctk.CTkFrame):
         )
         self.search_entry.place(relx=0.12, y=60)
 
+        self.search_info_label = CTkLabel(
+            master=master,
+            text="Здесь будут результаты поиска",
+            font=('Century Gothic', 36), 
+        )
+        self.search_info_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+
         # Search button
         self.search_button = ctk.CTkButton(
             master=self.main_frame,
@@ -102,8 +111,10 @@ class MainFrame(ctk.CTkFrame):
         request = self.search_entry.get()
         if request:
             print(f"Поиск по запросу: {request}")
+            self.search_info_label.configure(text=f"Поиск по запросу: {request}")
         else:
             print("Поиска не будет")
+            self.search_info_label.configure(text="Поиска не будет")
 
     # Функция для смены аккаунта
     def change_account(self):
@@ -253,7 +264,7 @@ class AddRecipeFrame(ctk.CTkFrame):
             messagebox.showerror("Ошибка", "Выберите картинку для рецепта")
 
         if name and cocking_time and ingredients and description and picture_path:
-            ingredients = [i.strip() for i in ingredients.split(',')]
+            ingredients = [i.strip().lower() for i in ingredients.split(',')]
             recipe = Recipe(name, description, picture_path, cocking_time, ingredients)
 
             # Это для тестирования
@@ -263,8 +274,6 @@ class AddRecipeFrame(ctk.CTkFrame):
             print(f"Список продуктов: {recipe.getProductList()}")
             print(f"Подтвержден: {recipe.getConfirmed()}")
             print(f"Путь к изображению: {recipe.getPciturePath()}")
-
-
 
             self.master.open_main_frame()
 

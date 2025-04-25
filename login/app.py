@@ -43,19 +43,7 @@ class LoginMainApp(tk.CTk):
         self.main_frame = MainFrame(self)
         self.main_frame.pack(fill="both", expand=True)
 
-    # Функция для открытия основного приложения после аутентификации
-    # def open_main_program(self, username, password, admin=False):
-    #     # Уничтожаем основной фрейм
-    #     user = User(username, password, admin)
-    #
-    #     self.main_program = self.main_program_class(user)
-    #
-    #     self.main_frame.destroy()
-    #     self.destroy()
-    #     self.main_program.mainloop()
-
-    def open_main_program(self, username, password, admin=False):
-        user = User(username, password, admin)
+    def open_main_program(self, user):
         self.destroy()
         self.main_program = self.main_program_class(user)
         self.main_program.mainloop()

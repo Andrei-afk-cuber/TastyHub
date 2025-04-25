@@ -1,4 +1,8 @@
+# импортируем необходимые для работы библиотеки
 import sqlite3
+# импортируем необходимые для работы классы
+from login.classes import User
+
 
 # Функция для показа/скрытия пароля при нажатии check_box
 def toggle_password(p_block, show_password_var):
@@ -10,7 +14,7 @@ def toggle_password(p_block, show_password_var):
 # Функция создания соединения с БД
 def get_database_connection():
     # Открываем соединение с БД
-    db = sqlite3.connect('users_database.db')
+    db = sqlite3.connect('database.db')
     cursor = db.cursor()
     return db, cursor
 
@@ -25,12 +29,14 @@ def check_login(username, password):
     try:
 
         # Check if the provided username and password match a record in the users table
-        cursor.execute("SELECT username, password FROM users WHERE username = ? AND password = ?", (username, password))
+        cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
         result = cursor.fetchone()
 
         # If a matching record is found, return True for a successful login
         if result:
-            return True
+            # Create User object
+            user = User(id=result[0], username=result[1], password=result[2], admin=result[3], authorized=result[4])
+            return user
 
     except sqlite3.Error as e:
         # Handle any potential database errors here
@@ -47,17 +53,22 @@ def check_login(username, password):
 def register_user(username, password):
     db, cursor = get_database_connection()
     try:
+        new_user = User(username, password)
+
         # Создание таблицы users если она не найдена
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        admin INTEGER NOT NULL DEFAULT 0,
+        authorized INTEGER NOT NULL DEFAULT 0
         )
         """)
 
         # Вставляем данные пользователя в БД
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        cursor.execute("INSERT INTO users (username, password, admin, authorized) VALUES (?, ?, ?, ?)",
+                       (new_user.getUsername(), new_user.getPassword(), new_user.isAdmin(), new_user.isAuthorized()))
 
         # Сохраняем изменения и делаем их коммит
         db.commit()

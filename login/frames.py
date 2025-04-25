@@ -64,17 +64,6 @@ class MainFrame(ctk.CTkFrame):
         )
         self.show_password.place(x=50, y=190)
 
-        # Forgot password text
-        """
-        self.label3 = ctk.CTkLabel(master=self.login_frame, text="Forgot password?",
-                                             font=('Century Gothic', 10))
-        self.label3.place(x=180, y=180)
-        self.label3.bind("<Enter>", lambda event: self.label3.configure(cursor="hand2"))
-        # Change cursor back to the default arrow when mouse leaves the widget
-        self.label3.bind("<Leave>", lambda event: self.label3.configure(cursor="arrow"))
-        # Bind the click event to open the Forgot Password frame
-        self.label3.bind("<Button-1>", lambda event: self.master.open_forgot_password_frame())"""
-
         # Login button
         self.login_button = ctk.CTkButton(
             master=self.login_frame,
@@ -108,13 +97,16 @@ class MainFrame(ctk.CTkFrame):
         password = self.p_block.get()
 
         # Вызов функции check_login
-        if check_login(username, password):
+        user = check_login(username, password)
+
+        # Если пользователь был успешно создан
+        if user:
             # Успешный логин
             print("Login Successful")
-            self.master.open_main_program(username, password)
+            self.master.open_main_program(user)
         else:
             # Неуспешный логин
-            self.error_label.configure(text="Invalid username or password")
+            self.error_label.configure(text="Неверный логин или пароль")
 
 # Класс фрейма регистрации
 class RegistrationFrame(ctk.CTkFrame):
