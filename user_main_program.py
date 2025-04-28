@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from frames import MainFrame, AddRecipeFrame
+from user_frames import MainFrame, AddRecipeFrame
 from classes import User
 
 # Основное окно приложения

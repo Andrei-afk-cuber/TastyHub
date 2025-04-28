@@ -1,5 +1,3 @@
-from doctest import master
-
 import customtkinter as ctk
 from customtkinter import CTkLabel
 from login.config import theme
@@ -69,7 +67,7 @@ class MainFrame(ctk.CTkFrame):
         self.search_entry.place(relx=0.12, y=60)
 
         self.search_info_label = CTkLabel(
-            master=master,
+            master=self.master,
             text="Здесь будут результаты поиска",
             font=('Century Gothic', 36), 
         )
