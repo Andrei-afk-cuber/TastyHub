@@ -4,10 +4,11 @@ from .classes import User
 
 # Основное окно приложения
 class LoginMainApp(tk.CTk):
-    def __init__(self, main_program_class):
+    def __init__(self, user_program_class, admin_program_class):
         super().__init__()
 
-        self.main_program_class = main_program_class
+        self.user_program_class = user_program_class
+        self.admin_program_class = admin_program_class
 
         self.geometry(f"600x400+550+250")   # Standard size 600x400
         self.title("Sign into your account")
@@ -45,7 +46,11 @@ class LoginMainApp(tk.CTk):
 
     def open_main_program(self, user):
         self.destroy()
-        self.main_program = self.main_program_class(user)
+        if user.isAdmin():
+            self.main_program = self.admin_program_class(user)
+        else:
+            self.main_program = self.user_program_class(user)
+
         self.main_program.mainloop()
 
     def destroy_all_frames(self):

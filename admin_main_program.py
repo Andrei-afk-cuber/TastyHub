@@ -52,4 +52,8 @@ class MainApp(ctk.CTk):
             frame.destroy()
         self.frames = {}
 
-MainApp().mainloop()
+
+"""
+Только для тестирования
+"""
+# MainApp().mainloop()

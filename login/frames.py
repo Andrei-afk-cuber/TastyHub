@@ -100,10 +100,15 @@ class MainFrame(ctk.CTkFrame):
         user = check_login(username, password)
 
         # Если пользователь был успешно создан
-        if user:
+        if user and user.isAuthorized():
             # Успешный логин
-            print("Login Successful")
+            print("Успешная авторизация")
             self.master.open_main_program(user)
+        # Если пользователь существует, но его аккаунт не подтвержден
+        elif user and not user.isAuthorized():
+            messagebox.showinfo("Подождите", "Вы зарегистрировались, но ваш аккаунт ожидает подтверждения"
+                                             " со стороны администрации. Подождите пожалуйста:).")
+        # Пользователь не существует
         else:
             # Неуспешный логин
             self.error_label.configure(text="Неверный логин или пароль")

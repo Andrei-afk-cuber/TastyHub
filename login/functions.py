@@ -32,21 +32,20 @@ def check_login(username, password):
         cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
         result = cursor.fetchone()
 
-        # If a matching record is found, return True for a successful login
+        # Если звпись найдена в БД, то возвращается результат (объект "пользователь")
         if result:
-            # Create User object
+            # Создаем объект пользователь
             user = User(id=result[0], username=result[1], password=result[2], admin=result[3], authorized=result[4])
             return user
 
     except sqlite3.Error as e:
-        # Handle any potential database errors here
         print("SQLite error:", e)
 
     finally:
-        # Close the database connection
+        # Закрываем соединение с БД
         close_database_connection(db)
 
-    # Return False for unsuccessful login
+    # Возвращаем False в случае не успеха
     return False
 
 # Функция регистрации пользователя
