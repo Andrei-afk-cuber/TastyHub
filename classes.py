@@ -37,13 +37,17 @@ class User(object):
         self.__authorized = False
 
 class Recipe(object):
-    def __init__(self, name, description, picture_path, cooking_time = 0, product_list=[], confirmed=False):
+    def __init__(self, author, name, description, picture_path, cooking_time = 0, product_list=[], confirmed=False):
         self.__name = name
         self.__description = description
         self.__cooking_time = cooking_time
         self.__product_list = product_list
         self.__confirmed = confirmed
-        self.__pciture_path = picture_path
+        self.__picture_path = picture_path
+        self.__author = author
+
+    def getAuthor(self):
+        return self.__author
 
     def getName(self):
         return self.__name
@@ -57,6 +61,12 @@ class Recipe(object):
     def getProductList(self):
         return self.__product_list
 
+    def getPicturePath(self):
+        return self.__picture_path
+
+    def getConfirmed(self):
+        return self.__confirmed
+
     def setName(self, name):
         self.__name = name
 
@@ -69,14 +79,8 @@ class Recipe(object):
     def setProductList(self, product_list):
         self.__product_list = product_list
 
-    def getConfirmed(self):
-        return self.__confirmed
-
-    def setConfirmed(self, confirmed):
+    def setConfirmed(self, confirmed=True):
         self.__confirmed = confirmed
 
-    def getPciturePath(self):
-        return self.__pciture_path
-
-    def setPciturePath(self, pciture_path):
-        self.__pciture_path = pciture_path
+    def setPiсturePath(self, picture_path):
+        self.__pciture_path = picture_path

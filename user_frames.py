@@ -5,6 +5,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 from classes import Recipe
 from PIL import Image
+from functions import save_recipe
 
 # Класс основного фрейма приложения
 class MainFrame(ctk.CTkFrame):
@@ -40,19 +41,6 @@ class MainFrame(ctk.CTkFrame):
             command=self.close_program
         )
         self.exit_button.place(x=1160, y=10)
-
-        # Кнопка выхода из аккаунта
-        self.change_account_button = ctk.CTkButton(
-            master=self.main_frame,
-            width=100,
-            text="Сменить аккаунт",
-            corner_radius=6,
-            fg_color=theme['fg_color'],
-            text_color=theme['text_color'],
-            hover_color=theme['hover_color'],
-            command=self.change_account
-        )
-        self.change_account_button.place(x=10, y=10)
 
         # Search entry
         self.search_entry = ctk.CTkEntry(
@@ -98,7 +86,7 @@ class MainFrame(ctk.CTkFrame):
             hover_color=theme['hover_color'],
             command=self.master.open_add_recipe_frame
         )
-        self.add_recipe_button.place(x=140, y=10)
+        self.add_recipe_button.place(x=10, y=10)
 
     # Функция для закрытия программы
     def close_program(self):
@@ -113,10 +101,6 @@ class MainFrame(ctk.CTkFrame):
         else:
             print("Поиска не будет")
             self.search_info_label.configure(text="Поиска не будет")
-
-    # Функция для смены аккаунта
-    def change_account(self):
-        print("Вы меняете аккаунт")
 
 class AddRecipeFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -246,7 +230,7 @@ class AddRecipeFrame(ctk.CTkFrame):
         )
         self.send_recipe_button.place(relx=0.87, y=550)
 
-    # Метод отправки рецепта 
+    # Метод отправки рецепта
     def send_recipe(self):
         name = self.recipe_name_entry.get().strip()
         try:
@@ -263,7 +247,7 @@ class AddRecipeFrame(ctk.CTkFrame):
 
         if name and cocking_time and ingredients and description and picture_path:
             ingredients = [i.strip().lower() for i in ingredients.split(',')]
-            recipe = Recipe(name, description, picture_path, cocking_time, ingredients)
+            recipe = Recipe(self.master.user.getUsername() ,name, description, picture_path, cocking_time, ingredients)
 
             # Это для тестирования
             print(f"Название рецепта: {recipe.getName()}")
@@ -271,7 +255,11 @@ class AddRecipeFrame(ctk.CTkFrame):
             print(f"Описание: {recipe.getDescription()}")
             print(f"Список продуктов: {recipe.getProductList()}")
             print(f"Подтвержден: {recipe.getConfirmed()}")
-            print(f"Путь к изображению: {recipe.getPciturePath()}")
+            print(f"Путь к изображению: {recipe.getPicturePath()}")
+            print("Автор ", recipe.getAuthor())
+
+            # Сохраняем рецепт
+            save_recipe(recipe)
 
             self.master.open_main_frame()
 
