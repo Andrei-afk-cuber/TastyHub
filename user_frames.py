@@ -3,7 +3,7 @@ from customtkinter import CTkLabel
 from login.config import theme
 from tkinter import messagebox
 from tkinter import filedialog
-from classes import Recipe
+from classes import Recipe, RecipeCard
 from PIL import Image
 from functions import save_recipe, load_recipes
 
@@ -20,9 +20,6 @@ class MainFrame(ctk.CTkFrame):
         # Create login frame
         self.main_frame = ctk.CTkFrame(master=self, width=1270, height=150)
         self.main_frame.place(relx=0.5, rely=0.12, anchor=ctk.CENTER)
-
-        # Загружаем рецепты
-        recipes = load_recipes()
 
         # top text
         self.text = CTkLabel(
@@ -57,13 +54,6 @@ class MainFrame(ctk.CTkFrame):
         )
         self.search_entry.place(relx=0.12, y=60)
 
-        self.search_info_label = CTkLabel(
-            master=self.master,
-            text="Здесь будут результаты поиска",
-            font=('Century Gothic', 36), 
-        )
-        self.search_info_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
-
         # Search button
         self.search_button = ctk.CTkButton(
             master=self.main_frame,
@@ -74,7 +64,6 @@ class MainFrame(ctk.CTkFrame):
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
-            command=self.search
         )
         self.search_button.place(x=980, y=60)
 
@@ -91,19 +80,39 @@ class MainFrame(ctk.CTkFrame):
         )
         self.add_recipe_button.place(x=10, y=10)
 
+        # Загружаем рецепты
+        self.recipes = load_recipes()
+
+        # Создаем фрейм для отображения карточек рецептов
+        self.recipes_container = ctk.CTkScrollableFrame(
+            master=self,
+            width=1200,
+            height=500,
+            fg_color="transparent"
+        )
+        self.recipes_container.place(relx=0.5, rely=0.6, anchor=ctk.CENTER)
+
+        # Отображаем рецепты
+        self.display_recipes()
+
     # Функция для закрытия программы
     def close_program(self):
         self.master.destroy()
 
-    # Функция для поиска рецептов
-    def search(self):
-        request = self.search_entry.get()
-        if request:
-            print(f"Поиск по запросу: {request}")
-            self.search_info_label.configure(text=f"Поиск по запросу: {request}")
-        else:
-            print("Поиска не будет")
-            self.search_info_label.configure(text="Поиска не будет")
+    # Метод отображения рецептов
+    def display_recipes(self):
+        # Очищаем контейнер перед добавлением новых карточек
+        for widget in self.recipes_container.winfo_children():
+            widget.destroy()
+
+        # Создаем карточки для каждого рецепта
+        for i, recipe in enumerate(self.recipes):
+            card = RecipeCard(
+                master=self.recipes_container,
+                recipe=recipe,
+                main_program=self.master
+            )
+            card.grid(row=i//3, column=i%3, padx=10, pady=10)
 
 class AddRecipeFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -328,3 +337,65 @@ class AddRecipeFrame(ctk.CTkFrame):
             return
         else:
             return
+
+class ShowRecipeFrame(ctk.CTkFrame):
+    def __init__(self, master, recipe):
+        super().__init__(master)
+
+        self.master = master
+        self.recipe = recipe
+
+        self.setup_show_recipe_frame()
+
+    def setup_show_recipe_frame(self):
+        # Основной фрейм
+        self.show_recipe_frame = ctk.CTkFrame(master=self, width=1270, height=50)
+        self.show_recipe_frame.place(relx=0.5, rely=0.05, anchor=ctk.CENTER)
+
+        # Кнопка возврата к основному фрейму
+        self.back_to_main = ctk.CTkButton(
+            master=self.show_recipe_frame,
+            width=100,
+            text="Назад",
+            corner_radius=6,
+            fg_color=theme['fg_color'],
+            text_color=theme['text_color'],
+            hover_color=theme['hover_color'],
+            command=self.master.open_main_frame
+        )
+        self.back_to_main.place(x=10, y=10)
+
+        # Метка с названием рецепта
+        CTkLabel(
+            master=self.show_recipe_frame,
+            text=f"{self.recipe.getName()} by {self.recipe.getAuthor()}",
+            font=('Century Gothic', 24, 'bold'),
+        ).place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+
+        # Фрейм для картинки рецепта
+        self.recipe_image_frame = ctk.CTkFrame(
+            master=self,
+            fg_color="white",
+        )
+        self.recipe_image_frame.place(relx=0.5, rely=0.25, anchor=ctk.CENTER)
+
+        # Метка для ингредиентов
+        CTkLabel(
+            master=self,
+            text="Ингредиенты:",
+            font=('Century Gothic', 24, 'bold'),
+        ).place(relx=0.08, rely=0.15, anchor=ctk.CENTER)
+
+        start_y = 130
+
+        # Создаем метку для каждого ингредиента
+        for ingredient in self.recipe.getProductList():
+            CTkLabel(
+                master=self,
+                text=ingredient,
+                font=('Century Gothic', 20, 'bold'),
+            ).place(relx=0.015, y=start_y)
+
+            start_y += 25
+
+        # Фрейм для описания рецепта
