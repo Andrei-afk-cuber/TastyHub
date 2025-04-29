@@ -16,22 +16,56 @@ def close_database_connection(db):
         db.close()
 
 # Функция загрузки рецептов
-def load_recipes():
+def load_recipes(only_confirmed=True, limit=None):
     db, cursor = get_database_connection()
+    recipes = []
 
     try:
+        # Создаем таблицу, если не сущетсвует
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS recipes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            author_name TEXT NOT NULL,
-            recipe_name TEXT NOT NULL,
-            cook_time INTEGER NOT NULL,
-            description TEXT NOT NULL,
-            picture_path TEXT NOT NULL,
-        )
-        """)
-    except:
-        pass
+                    CREATE TABLE IF NOT EXISTS recipes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    author_name TEXT NOT NULL,
+                    recipe_name TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    cooking_time INTEGER NOT NULL,
+                    products TEXT NOT NULL,
+                    picture_path TEXT NOT NULL,
+                    confirmed INTEGER NOT NULL DEFAULT 0
+                    )
+                    """)
+
+        query = "SELECT * FROM recipes"
+        params = []
+
+        if only_confirmed:
+            query += " WHERE confirmed = 1"
+
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(limit)
+
+        cursor.execute(query, params)
+        columns = [col[0] for col in cursor.description]
+
+        # Создаем объекты Recipe
+        for row in cursor.fetchall():
+            row_dict = dict(zip(columns, row))
+            recipes.append(Recipe(
+                author=row_dict['author_name'],
+                name=row_dict['recipe_name'],
+                description=row_dict['description'],
+                picture_path=row_dict['picture_path'],
+                cooking_time=row_dict['cooking_time'],
+                product_list=[p.strip() for p in row_dict['products'].split(',')],
+                confirmed=bool(row_dict['confirmed'])
+            ))
+
+        return recipes
+
+    except sqlite3.Error as e:
+        print(f"Ошибка: ", e)
+
     finally:
         close_database_connection(db)
 

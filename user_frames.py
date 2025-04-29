@@ -5,7 +5,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 from classes import Recipe
 from PIL import Image
-from functions import save_recipe
+from functions import save_recipe, load_recipes
 
 # Класс основного фрейма приложения
 class MainFrame(ctk.CTkFrame):
@@ -20,6 +20,9 @@ class MainFrame(ctk.CTkFrame):
         # Create login frame
         self.main_frame = ctk.CTkFrame(master=self, width=1270, height=150)
         self.main_frame.place(relx=0.5, rely=0.12, anchor=ctk.CENTER)
+
+        # Загружаем рецепты
+        recipes = load_recipes()
 
         # top text
         self.text = CTkLabel(
