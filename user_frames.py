@@ -3,7 +3,7 @@ from login.config import theme
 from tkinter import messagebox, filedialog
 from classes import Recipe, RecipeCard
 from PIL import Image, ImageTk
-from functions import save_recipe, load_recipes
+from functions import save_recipe, load_recipes, EditableRecipeCard
 import os
 
 # Класс основного фрейма приложения
@@ -499,7 +499,7 @@ class UserProfileFrame(ctk.CTkFrame):
         super().__init__(master)
 
         self.master = master
-        self.recipes = load_recipes()
+        self.recipes = load_recipes(by_author=self.master.user.getUsername())
 
         self.setup_user_profile_frame()
 
@@ -553,7 +553,7 @@ class UserProfileFrame(ctk.CTkFrame):
 
         # Создаем карточки для каждого рецепта
         for i, recipe in enumerate(self.recipes):
-            card = RecipeCard(
+            card = EditableRecipeCard(
                 master=self.recipes_container,
                 recipe=recipe,
                 main_program=self.master

@@ -42,7 +42,8 @@ class User(object):
         self.__authorized = False
 
 class Recipe(object):
-    def __init__(self, author, name, description, picture_path, cooking_time = 0, product_list=[], confirmed=False):
+    def __init__(self, author, name, description, picture_path, cooking_time = 0, product_list=[], confirmed=False, id=0):
+        self.__id = id
         self.__name = name
         self.__description = description
         self.__cooking_time = cooking_time
@@ -50,6 +51,9 @@ class Recipe(object):
         self.__confirmed = confirmed
         self.__picture_path = picture_path
         self.__author = author
+
+    def getId(self):
+        return self.__id
 
     def getAuthor(self):
         return self.__author
