@@ -1,11 +1,10 @@
 import customtkinter as ctk
-from customtkinter import CTkLabel
 from login.config import theme
-from tkinter import messagebox
-from tkinter import filedialog
+from tkinter import messagebox, filedialog
 from classes import Recipe, RecipeCard
-from PIL import Image
+from PIL import Image, ImageTk
 from functions import save_recipe, load_recipes
+import os
 
 # Класс основного фрейма приложения
 class MainFrame(ctk.CTkFrame):
@@ -17,12 +16,12 @@ class MainFrame(ctk.CTkFrame):
 
     # Функция для отрисовки основного фрейма
     def setup_main_frame(self):
-        # Create login frame
+        # Создаем фрейм сверху страницы
         self.main_frame = ctk.CTkFrame(master=self, width=1270, height=150)
         self.main_frame.place(relx=0.5, rely=0.12, anchor=ctk.CENTER)
 
         # top text
-        self.text = CTkLabel(
+        self.text = ctk.CTkLabel(
             master=self.main_frame,
             text=self.master.user.getUsername(),
             font=('Times New Roman', 12)
@@ -80,6 +79,19 @@ class MainFrame(ctk.CTkFrame):
         )
         self.add_recipe_button.place(x=10, y=10)
 
+        # Кнопка откртия профиля пользователя
+        self.user_profile_button = ctk.CTkButton(
+            master=self.main_frame,
+            width=100,
+            text="Профиль",
+            corner_radius=6,
+            fg_color=theme['fg_color'],
+            text_color=theme['text_color'],
+            hover_color=theme['hover_color'],
+            command=self.master.open_user_profile_frame
+        )
+        self.user_profile_button.place(x=1040, y=10)
+
         # Загружаем рецепты
         self.recipes = load_recipes()
 
@@ -112,7 +124,7 @@ class MainFrame(ctk.CTkFrame):
                 recipe=recipe,
                 main_program=self.master
             )
-            card.grid(row=i//3, column=i%3, padx=10, pady=10)
+            card.grid(row=i//5, column=i%5, padx=10, pady=10)
 
 class AddRecipeFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -124,12 +136,12 @@ class AddRecipeFrame(ctk.CTkFrame):
 
     def setup_add_recipe_frame(self):
         # Create recipe frame
-        self.add_recipe_frame = ctk.CTkFrame(master=self, width=1270, height=50)
-        self.add_recipe_frame.place(relx=0.5, rely=0.05, anchor=ctk.CENTER)
+        self.header_frame = ctk.CTkFrame(master=self, width=1270, height=50)
+        self.header_frame.place(relx=0.5, rely=0.05, anchor=ctk.CENTER)
 
         # top text
-        self.text = CTkLabel(
-            master=self.add_recipe_frame,
+        self.text = ctk.CTkLabel(
+            master=self.header_frame,
             text="Добавление рецепта",
             font=('Century Gothic', 36),
             text_color=theme['text_color']
@@ -137,8 +149,8 @@ class AddRecipeFrame(ctk.CTkFrame):
         self.text.place(relx=0.35, rely=0)
 
         # Кнопка возврата к основному фрейму
-        self.back_to_main = ctk.CTkButton(
-            master=self.add_recipe_frame,
+        self.back_to_main_button = ctk.CTkButton(
+            master=self.header_frame,
             width=100,
             text="Назад",
             corner_radius=6,
@@ -147,7 +159,7 @@ class AddRecipeFrame(ctk.CTkFrame):
             hover_color=theme['hover_color'],
             command=self.master.open_main_frame
         )
-        self.back_to_main.place(x=10, y=10)
+        self.back_to_main_button.place(x=10, y=10)
 
         self.recipe_data_frame = ctk.CTkFrame(
             master=self,
@@ -179,7 +191,7 @@ class AddRecipeFrame(ctk.CTkFrame):
         self.recipe_cocking_time_entry.place(x=25, y=50)
 
         # метка продуктов
-        CTkLabel(
+        ctk.CTkLabel(
             master=self.recipe_data_frame,
             text="Продкуты: ",
             font=('Century Gothic', 16),
@@ -213,7 +225,7 @@ class AddRecipeFrame(ctk.CTkFrame):
         self.load_image_button.place(relx=0.7, y=10)
 
         # метка описания
-        CTkLabel(
+        ctk.CTkLabel(
             master=self.recipe_data_frame,
             text="Описание: ",
             font=('Century Gothic', 16),
@@ -296,7 +308,7 @@ class AddRecipeFrame(ctk.CTkFrame):
                 frame_width = self.recipe_photo_frame.winfo_width()
                 frame_height = self.recipe_photo_frame.winfo_height()
 
-                # Масштабируем изображенияе с сохранением пропорций
+                # Масштабируем изображение с сохранением пропорций
                 image_ratio = original_image.width / original_image.height
                 frame_ratio = frame_width / frame_height
 
@@ -338,21 +350,30 @@ class AddRecipeFrame(ctk.CTkFrame):
         else:
             return
 
+
+import customtkinter as ctk
+from PIL import Image, ImageTk
+import os
+
+
 class ShowRecipeFrame(ctk.CTkFrame):
     def __init__(self, master, recipe):
         super().__init__(master)
-
         self.master = master
         self.recipe = recipe
-
         self.setup_show_recipe_frame()
 
     def setup_show_recipe_frame(self):
-        # Основной фрейм
-        self.show_recipe_frame = ctk.CTkFrame(master=self, width=1270, height=50)
+        # Основной фрейм заголовка
+        self.show_recipe_frame = ctk.CTkFrame(
+            master=self,
+            width=1270,
+            height=50,
+            fg_color="transparent"
+        )
         self.show_recipe_frame.place(relx=0.5, rely=0.05, anchor=ctk.CENTER)
 
-        # Кнопка возврата к основному фрейму
+        # Кнопка возврата
         self.back_to_main = ctk.CTkButton(
             master=self.show_recipe_frame,
             width=100,
@@ -365,37 +386,176 @@ class ShowRecipeFrame(ctk.CTkFrame):
         )
         self.back_to_main.place(x=10, y=10)
 
-        # Метка с названием рецепта
-        CTkLabel(
+        # Название рецепта и автор
+        ctk.CTkLabel(
             master=self.show_recipe_frame,
             text=f"{self.recipe.getName()} by {self.recipe.getAuthor()}",
             font=('Century Gothic', 24, 'bold'),
         ).place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
-        # Фрейм для картинки рецепта
-        self.recipe_image_frame = ctk.CTkFrame(
+        # Контейнер для изображения
+        self.image_frame = ctk.CTkFrame(
             master=self,
-            fg_color="white",
         )
-        self.recipe_image_frame.place(relx=0.5, rely=0.25, anchor=ctk.CENTER)
+        self.image_frame.place(relx=0.5, rely=0.25, anchor=ctk.CENTER)
 
-        # Метка для ингредиентов
-        CTkLabel(
+        # Метка для изображения
+        self.image_label = ctk.CTkLabel(
+            master=self.image_frame,
+            text="",
+            corner_radius=8,
+            fg_color="transparent",
+        )
+        self.image_label.pack(pady=10)
+
+        # Заголовок ингредиентов
+        ctk.CTkLabel(
             master=self,
             text="Ингредиенты:",
             font=('Century Gothic', 24, 'bold'),
+            text_color="orange",
         ).place(relx=0.08, rely=0.15, anchor=ctk.CENTER)
 
+        # Список ингредиентов
         start_y = 130
-
-        # Создаем метку для каждого ингредиента
         for ingredient in self.recipe.getProductList():
-            CTkLabel(
+            ctk.CTkLabel(
                 master=self,
-                text=ingredient,
-                font=('Century Gothic', 20, 'bold'),
+                text=f"• {ingredient}",
+                font=('Century Gothic', 20),
             ).place(relx=0.015, y=start_y)
+            start_y += 30
 
-            start_y += 25
+        # Фрейм с описанием рецепта
+        self.recipe_description_frame = ctk.CTkScrollableFrame(
+            master=self,
+            width=1200,
+            height=380,
+            corner_radius=10,
+            fg_color="transparent",
+        )
+        self.recipe_description_frame.place(relx=0.5, rely=0.7, anchor=ctk.CENTER)
 
-        # Фрейм для описания рецепта
+        self.description_text = ctk.CTkTextbox(
+            master=self.recipe_description_frame,
+            width=1150,
+            height=300,
+            font=('Century Gothic', 14),
+            wrap="word",  # Перенос по словам
+            fg_color="transparent",
+            border_width=1,
+            border_color="#e0e0e0",
+            corner_radius=8,
+            padx=10,
+            pady=10
+        )
+        self.description_text.insert("1.0", self.recipe.getDescription())
+        self.description_text.configure(state="disabled")  # Запрещаем редактирование
+        self.description_text.pack(pady=(0, 10), padx=20, fill="both", expand=True)
+
+        # Загружаем изображение
+        self.load_recipe_image()
+
+    def load_recipe_image(self):
+        try:
+            image_path = os.path.join("recipe_images", self.recipe.getPicturePath())
+
+            if os.path.exists(image_path):
+                img = Image.open(image_path)
+
+                # Ресайз с сохранением пропорций
+                width, height = 380, 280
+                img_ratio = img.width / img.height
+                frame_ratio = width / height
+
+                if img_ratio > frame_ratio:
+                    new_width = width
+                    new_height = int(width / img_ratio)
+                else:
+                    new_height = height
+                    new_width = int(height * img_ratio)
+
+                img = img.resize((new_width, new_height), Image.LANCZOS)
+                self.recipe_image = ImageTk.PhotoImage(img)
+
+                self.image_label.configure(
+                    image=self.recipe_image,
+                    text=""
+                )
+            else:
+                self.image_label.configure(
+                    text="Изображение не найдено",
+                )
+        except Exception as e:
+            print(f"Ошибка загрузки изображения: {e}")
+            self.image_label.configure(
+                text="Ошибка загрузки",
+                font=('Century Gothic', 14),
+                text_color="red"
+            )
+
+class UserProfileFrame(ctk.CTkFrame):
+    def __init__(self, master):
+        super().__init__(master)
+
+        self.master = master
+        self.recipes = load_recipes()
+
+        self.setup_user_profile_frame()
+
+    def setup_user_profile_frame(self):
+        # Создаем фрейм сверху страницы
+        self.header_frame = ctk.CTkFrame(master=self, width=1270, height=50)
+        self.header_frame.place(relx=0.5, y=30, anchor=ctk.CENTER)
+
+        # Кнопка возврата к основному фрейму
+        self.back_to_main_button = ctk.CTkButton(
+            master=self.header_frame,
+            width=100,
+            text="Назад",
+            corner_radius=6,
+            fg_color=theme['fg_color'],
+            text_color=theme['text_color'],
+            hover_color=theme['hover_color'],
+            command=self.master.open_main_frame
+        )
+        self.back_to_main_button.place(x=10, y=10)
+
+        ctk.CTkLabel(
+            master=self.header_frame,
+            text=f"Профиль пользователя {self.master.user.getUsername()}",
+            font=('Century Gothic', 24)
+        ).place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+
+        ctk.CTkLabel(
+            master=self,
+            text="Ваши посты",
+            font=('Century Gothic', 24, 'bold')
+        ).place(relx=0.5, rely=0.1, anchor=ctk.CENTER)
+
+        # Создаем фрейм для отображения карточек рецептов
+        self.recipes_container = ctk.CTkScrollableFrame(
+            master=self,
+            width=1200,
+            height=500,
+            fg_color="transparent"
+        )
+        self.recipes_container.place(relx=0.5, rely=0.6, anchor=ctk.CENTER)
+
+        # Отображаем рецепты
+        self.display_recipes()
+
+    # Метод отображения рецептов
+    def display_recipes(self):
+        # Очищаем контейнер перед добавлением новых карточек
+        for widget in self.recipes_container.winfo_children():
+            widget.destroy()
+
+        # Создаем карточки для каждого рецепта
+        for i, recipe in enumerate(self.recipes):
+            card = RecipeCard(
+                master=self.recipes_container,
+                recipe=recipe,
+                main_program=self.master
+            )
+            card.grid(row=i // 5, column=i % 5, padx=10, pady=10)

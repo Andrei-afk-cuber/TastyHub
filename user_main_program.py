@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from user_frames import MainFrame, AddRecipeFrame, ShowRecipeFrame
+from user_frames import MainFrame, AddRecipeFrame, ShowRecipeFrame, UserProfileFrame
 from classes import User
 
 # Основное окно приложения
@@ -40,6 +40,15 @@ class MainApp(ctk.CTk):
         self.show_recipe_frame = ShowRecipeFrame(self, recipe)
         self.frames['show_recipe_frame'] = self.show_recipe_frame
         self.show_recipe_frame.pack(fill="both", expand=True)
+
+    # Метод открытия фрейма для просмотра профиля
+    def open_user_profile_frame(self):
+        # Удаляем основной фрейм
+        self.main_frame.destroy()
+        # Открываем фрейм просмотра рецепта
+        self.user_profile_frame = UserProfileFrame(self)
+        self.frames['user_profile_frame'] = self.user_profile_frame
+        self.user_profile_frame.pack(fill="both", expand=True)
 
     # Функция удаления всех фреймов
     def destroy_all_frames(self):

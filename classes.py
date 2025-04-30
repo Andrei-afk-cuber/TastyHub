@@ -1,5 +1,7 @@
 import customtkinter as ctk
 from login.config import*
+import os
+from PIL import ImageTk, Image
 
 class User(object):
     def __init__(self, username, password, admin=False, authorized=False, id=0):
@@ -120,7 +122,7 @@ class RecipeCard(ctk.CTkFrame):
             text="",
             width=180,
             height=120,
-            fg_color="#f5f5f5",
+            fg_color="transparent",
             corner_radius=8
         )
         self.image_label.grid(row=1, column=0, padx=10, pady=5)
@@ -148,3 +150,43 @@ class RecipeCard(ctk.CTkFrame):
             command=lambda:self.main_program.open_show_recipe_frame(recipe)
         )
         self.detail_btn.grid(row=3, column=0, pady=(5, 10))
+
+        self.load_recipe_image()
+
+    def load_recipe_image(self):
+        try:
+            image_path = os.path.join("recipe_images", self.recipe.getPicturePath())
+
+            if os.path.exists(image_path):
+                img = Image.open(image_path)
+
+                # Ресайз с сохранением пропорций
+                width, height = 200, 140
+                img_ratio = img.width / img.height
+                frame_ratio = width / height
+
+                if img_ratio > frame_ratio:
+                    new_width = width
+                    new_height = int(width / img_ratio)
+                else:
+                    new_height = height
+                    new_width = int(height * img_ratio)
+
+                img = img.resize((new_width, new_height), Image.LANCZOS)
+                self.recipe_image = ImageTk.PhotoImage(img)
+
+                self.image_label.configure(
+                    image=self.recipe_image,
+                    text=""
+                )
+            else:
+                self.image_label.configure(
+                    text="Изображение не найдено"
+                )
+        except Exception as e:
+            print(f"Ошибка загрузки изображения: {e}")
+            self.image_label.configure(
+                text="Ошибка загрузки",
+                font=('Century Gothic', 14),
+                text_color="red"
+            )
