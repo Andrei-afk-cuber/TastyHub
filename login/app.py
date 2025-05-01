@@ -11,7 +11,7 @@ class LoginMainApp(tk.CTk):
         self.admin_program_class = admin_program_class
 
         self.geometry(f"600x400+550+250")   # Standard size 600x400
-        self.title("Sign into your account")
+        self.title("Авторизация")
         self.iconbitmap("images/icon.ico")
         # Create the main frame
         self.main_frame = MainFrame(self)
@@ -40,7 +40,7 @@ class LoginMainApp(tk.CTk):
     # Открываем основной фрейм
     def open_main_frame(self):
         self.destroy_all_frames()
-        self.change_title("Sign into your account")
+        self.change_title("Авторизация")
         self.main_frame = MainFrame(self)
         self.main_frame.pack(fill="both", expand=True)
 
@@ -58,7 +58,3 @@ class LoginMainApp(tk.CTk):
         for frame_name, frame in self.frames.items():
             frame.destroy()
         self.frames = {}
-
-"""
-Если будет ошибка связанная с классами, то придется вернуть сюда класс User
-"""

@@ -14,11 +14,11 @@ class MainFrame(ctk.CTkFrame):
 
     # Функция для отрисовки основного фрейма
     def setup_login_frame(self):
-        # Create login frame
+        # Создание фрейма входа в аккаунт
         self.login_frame = ctk.CTkFrame(master=self, width=320, height=380)
         self.login_frame.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
-        # top text
+        # Верхний текст
         self.text = CTkLabel(
             master=self.login_frame,
             text="TastyHub",
@@ -34,61 +34,61 @@ class MainFrame(ctk.CTkFrame):
         )
         self.error_label.place(x=70, y=80)
 
-        # Username entry block
+        # Поле ввода логина
         self.u_block = ctk.CTkEntry(
             master=self.login_frame,
             width=220,
-            placeholder_text="Username",
+            placeholder_text="Логин пользователя",
         )
         self.u_block.place(x=50, y=110)
 
-        # Password entry block
+        # Поле ввода пароля
         self.show_password_var = ctk.BooleanVar()
         self.p_block = ctk.CTkEntry(
             master=self.login_frame,
             width=220,
-            placeholder_text="Password",
+            placeholder_text="Пароль",
             show="*"
         )
         self.p_block.place(x=50, y=150)
 
-        # checkbox for showing password
+        # галочка для показа пароля
         self.show_password = ctk.CTkCheckBox(
             master=self.login_frame,
-            text="Show Password",
+            text="Показать пароль",
             font=('Century Gothic', 12),
-            command=lambda: toggle_password(self.p_block, self.show_password_var),  # ченкуть зачем тут лямбда
+            command=lambda: toggle_password(self.p_block, self.show_password_var),
             variable=self.show_password_var,
             fg_color=theme['fg_color'],
             hover_color=theme['hover_color'],
         )
         self.show_password.place(x=50, y=190)
 
-        # Login button
+        # Кнопка входа в аккаунт
         self.login_button = ctk.CTkButton(
             master=self.login_frame,
-            width=100,
-            text="Login",
+            width=120,
+            text="Войти",
             corner_radius=6,
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
             command=self.check_login_credentials,
         )
-        self.login_button.place(x=110, y=230)
+        self.login_button.place(relx=0.5, y=260, anchor=ctk.CENTER)
 
-        # Register button
+        # Кнопка регистрации
         self.register_button = ctk.CTkButton(
             master=self.login_frame,
-            width=100,
-            text="Register",
+            width=120,
+            text="Создать аккаунт",
             corner_radius=6,
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
             command=self.master.open_register_frame
         )
-        self.register_button.place(x=110, y=270)
+        self.register_button.place(relx=0.5, y=300, anchor=ctk.CENTER)
 
     # Функция для проверки пароля и логина
     def check_login_credentials(self):
@@ -123,7 +123,7 @@ class RegistrationFrame(ctk.CTkFrame):
 
     # Метод отрисовки фрейма регистрации
     def setup_register_frame(self):
-        self.master.change_title("Register")
+        self.master.change_title("Регистрация")
         # Create the registration frame
         self.registration_frame = ctk.CTkFrame(
             master=self,
@@ -132,19 +132,19 @@ class RegistrationFrame(ctk.CTkFrame):
         )
         self.registration_frame.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
-        # Top text
+        # Верхний текст
         self.text = CTkLabel(
             master=self.registration_frame,
-            text="Welcome to our \nfriendly family",
+            text="Добро пожаловать в\n TestyHub",
             font=('Century Gothic', 25)
         )
-        self.text.place(x=55, y=25)
+        self.text.place(relx=0.5, y=50, anchor=ctk.CENTER)
 
         self.back_button = ctk.CTkButton(
             master=self,
             width=30,
             height=30,
-            text="Back",
+            text="Назад",
             corner_radius=6,
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
@@ -153,29 +153,30 @@ class RegistrationFrame(ctk.CTkFrame):
         )
         self.back_button.place(x=10, y=10)
 
-        # Entry fields for registration form
+        # Поле ввода логина
         self.username_entry = ctk.CTkEntry(
             master=self.registration_frame,
             width=220,
-            placeholder_text="Name",
+            placeholder_text="Логин",
         )
         self.username_entry.place(x=50, y=100)
 
+        # Поле ввода пароля
         self.show_password_var = ctk.BooleanVar()
         self.p_block = ctk.CTkEntry(
             master=self.registration_frame,
             width=220,
-            placeholder_text="Password",
+            placeholder_text="Пароль",
             show="*"
         )
         self.p_block.place(x=50, y=140)
 
-        # checkbox for showing password
+        # Галочка показа пароля
         self.show_password = ctk.CTkCheckBox(
             master=self.registration_frame,
-            text="Show Password",
+            text="Показать пароль",
             font=('Century Gothic', 12),
-            command=lambda: toggle_password(self.p_block, self.show_password_var),  # ченкуть зачем тут лямбда
+            command=lambda: toggle_password(self.p_block, self.show_password_var),
             variable=self.show_password_var,
             fg_color=theme['fg_color'],
             hover_color=theme['hover_color'],
@@ -184,15 +185,15 @@ class RegistrationFrame(ctk.CTkFrame):
 
         self.register_button = ctk.CTkButton(
             master=self.registration_frame,
-            width=100,
-            text="Register",
+            width=120,
+            text="Зарегистрироваться",
             corner_radius=6,
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
             command=self.new_user_data
         )
-        self.register_button.place(x=110, y=340)
+        self.register_button.place(relx=0.5, y=300, anchor=ctk.CENTER)
 
     # Метод для регистрации нового пользователя
     def new_user_data(self):
@@ -200,30 +201,19 @@ class RegistrationFrame(ctk.CTkFrame):
         password = self.p_block.get()
 
         if not username or not password:
-            print("Please enter both username and password")
-            messagebox.showerror("Error", "Please enter both username and password")
+            print("Пожалуйста, заполните поля ввода логина и пароля")
+            messagebox.showerror("Ошибка", "Заполните поля логина и пароля")
             return
 
         if register_user(username, password):
-            # Registration successful
-            print("Registration Successful")
-            messagebox.showinfo("Success", "Registration Successful")
+            # Успешная регистрация
+            print("Пользователь успешно зарегистрировался")
+            messagebox.showinfo("Поздравляем", "Регистрация прошла успешно")
             self.registration_frame.place_forget()
             self.master.open_main_frame()
             return
         else:
-            # Handle the case where the username or email is already taken
-            print("Username or password is already in use")
-            messagebox.showerror("Error", "Username or password is already in use")
+            # В случае, если пользователь с таким логином уже зарегистрирован
+            print("Логин уже используется")
+            messagebox.showerror("Ошибка", "Этот логин уже занят, используйте другой")
             return
-
-# Класс фрейма после авторизации
-class LoggedInFrame(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.master = master
-        self.setup_logged_in_frame()
-
-    def setup_logged_in_frame(self):
-        self.master.change_geometry("1280x720")
-        pass

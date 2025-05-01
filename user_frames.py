@@ -3,14 +3,17 @@ from login.config import theme
 from tkinter import messagebox, filedialog
 from classes import Recipe, RecipeCard
 from PIL import Image, ImageTk
-from functions import save_recipe, load_recipes, EditableRecipeCard
+from functions import save_recipe, load_recipes, update_recipe_by_id, EditableRecipeCard
 import os
 
 # Класс основного фрейма приложения
 class MainFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+
         self.master = master
+        # Загружаем рецепты
+        self.recipes = load_recipes()
 
         self.setup_main_frame()
 
@@ -20,15 +23,7 @@ class MainFrame(ctk.CTkFrame):
         self.main_frame = ctk.CTkFrame(master=self, width=1270, height=150)
         self.main_frame.place(relx=0.5, rely=0.12, anchor=ctk.CENTER)
 
-        # top text
-        self.text = ctk.CTkLabel(
-            master=self.main_frame,
-            text=self.master.user.getUsername(),
-            font=('Times New Roman', 12)
-        )
-        self.text.place(x=90, y=45)
-
-        # Exit button
+        # Кнопка закрытия программы
         self.exit_button = ctk.CTkButton(
             master=self.main_frame,
             width=100,
@@ -41,7 +36,17 @@ class MainFrame(ctk.CTkFrame):
         )
         self.exit_button.place(x=1160, y=10)
 
-        # Search entry
+        self.refresh_button = ctk.CTkButton(
+            master=self.main_frame,
+            text="Обновить",
+            corner_radius=6,
+            height=40,
+            command=self.display_recipes
+        )
+        self.refresh_button.place(x=1100, y=60)
+
+
+        # Поле ввода для поиска
         self.search_entry = ctk.CTkEntry(
             master=self.main_frame,
             fg_color="white",
@@ -53,7 +58,7 @@ class MainFrame(ctk.CTkFrame):
         )
         self.search_entry.place(relx=0.12, y=60)
 
-        # Search button
+        # Кнопка поиска
         self.search_button = ctk.CTkButton(
             master=self.main_frame,
             width=100,
@@ -92,8 +97,7 @@ class MainFrame(ctk.CTkFrame):
         )
         self.user_profile_button.place(x=1040, y=10)
 
-        # Загружаем рецепты
-        self.recipes = load_recipes()
+
 
         # Создаем фрейм для отображения карточек рецептов
         self.recipes_container = ctk.CTkScrollableFrame(
@@ -113,6 +117,7 @@ class MainFrame(ctk.CTkFrame):
 
     # Метод отображения рецептов
     def display_recipes(self):
+        self.recipes = load_recipes()
         # Очищаем контейнер перед добавлением новых карточек
         for widget in self.recipes_container.winfo_children():
             widget.destroy()
@@ -126,11 +131,16 @@ class MainFrame(ctk.CTkFrame):
             )
             card.grid(row=i//5, column=i%5, padx=10, pady=10)
 
+    def refresh_recipes(self):
+        pass
+
 class AddRecipeFrame(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, recipe=None):
         super().__init__(master)
 
         self.master = master
+        self.recipe = recipe
+        self.selected_image_path = None
 
         self.setup_add_recipe_frame()
 
@@ -198,7 +208,7 @@ class AddRecipeFrame(ctk.CTkFrame):
         ).place(x=30, y=90)
 
         # поле для ввода продуктов для рецепта
-        self.product_textbox = ctk.CTkTextbox(
+        self.recipe_product_textbox = ctk.CTkTextbox(
             master=self.recipe_data_frame,
             font=('Century Gothic', 12),
             corner_radius=12,
@@ -206,13 +216,31 @@ class AddRecipeFrame(ctk.CTkFrame):
             height=100,
             fg_color=theme['textbox_bg_color']
         )
-        self.product_textbox.place(x=25, y=130)
+        self.recipe_product_textbox.place(x=25, y=130)
 
         # Фрейм для изображения блюда
         self.recipe_photo_frame = ctk.CTkFrame(
             master=self.recipe_data_frame,
+            width=300,
+            height=200,
+            fg_color="white",
+            corner_radius=10,
+            border_width=1,
+            border_color="#e0e0e0"
         )
         self.recipe_photo_frame.place(relx=0.5, rely=0.2, anchor=ctk.CENTER)
+
+        # Метка для изображения
+        self.recipe_image_label = ctk.CTkLabel(
+            master=self.recipe_photo_frame,
+            text="Изображение рецепта",
+            width=280,
+            height=180,
+            fg_color="#f5f5f5",
+            corner_radius=8,
+            text_color="gray"
+        )
+        self.recipe_image_label.pack(pady=10)
 
         self.load_image_button = ctk.CTkButton(
             master=self.recipe_data_frame,
@@ -232,7 +260,7 @@ class AddRecipeFrame(ctk.CTkFrame):
         ).place(x=30, y=260)
 
         # поле для ввода описания рецепта
-        self.description_textbox = ctk.CTkTextbox(
+        self.recipe_description_textbox = ctk.CTkTextbox(
             master=self.recipe_data_frame,
             font=('Century Gothic', 12),
             corner_radius=12,
@@ -240,7 +268,7 @@ class AddRecipeFrame(ctk.CTkFrame):
             height=240,
             fg_color=theme['textbox_bg_color']
         )
-        self.description_textbox.place(relx=0.5, y=430, anchor=ctk.CENTER)
+        self.recipe_description_textbox.place(relx=0.5, y=430, anchor=ctk.CENTER)
 
         # кнопка подтверждения добавления рецепта
         self.send_recipe_button = ctk.CTkButton(
@@ -254,16 +282,80 @@ class AddRecipeFrame(ctk.CTkFrame):
         )
         self.send_recipe_button.place(relx=0.87, y=550)
 
+        if self.recipe:
+            # Изменяем параметры кнопок
+            self.send_recipe_button.configure(text="Сохранить", command=lambda: self.send_recipe(True))
+
+            # Устанавливаем значения для полей рецепта
+            self.recipe_name_entry.insert(0, self.recipe.getName())
+            self.recipe_cocking_time_entry.insert(0, str(self.recipe.getCookingTime()))
+            self.recipe_description_textbox.insert("1.0", self.recipe.getDescription())
+            self.recipe_product_textbox.insert("1.0", ", ".join(self.recipe.getProductList()))
+
+            # Загружаем существующее изображение рецепта
+            self.load_existing_recipe_image()
+
+    # Метод для загрузки изображения уже существующего рецепта
+    def load_existing_recipe_image(self):
+        try:
+            if not self.recipe or not self.recipe.getPicturePath():
+                return
+
+            image_path = os.path.join("recipe_images", self.recipe.getPicturePath())
+            if os.path.exists(image_path):
+                # Сохраняем путь к текущему изображению
+                self.selected_image_path = image_path
+
+                # Создаем CTkImage
+                img = Image.open(image_path)
+                img = self.resize_image(img, 280, 180)
+                self.recipe_image = ctk.CTkImage(
+                    light_image=img,
+                    dark_image=img,
+                    size=(280, 180)
+                )
+
+                # Устанавливаем изображение
+                self.recipe_image_label.configure(
+                    image=self.recipe_image,
+                    text=""
+                )
+            else:
+                self.recipe_image_label.configure(
+                    text="Изображение не найдено",
+                    text_color="red"
+                )
+        except Exception as e:
+            print(f"Ошибка загрузки изображения: {e}")
+            self.recipe_image_label.configure(
+                text="Ошибка загрузки",
+                text_color="red"
+            )
+
+    # Метод изменения изображения рецепта с сохранением пропорций
+    def resize_image(self, img, max_width, max_height):
+        img_ratio = img.width / img.height
+        frame_ratio = max_width / max_height
+
+        if img_ratio > frame_ratio:
+            new_width = max_width
+            new_height = int(max_width / img_ratio)
+        else:
+            new_height = max_height
+            new_width = int(max_height * img_ratio)
+
+        return img.resize((new_width, new_height), Image.LANCZOS)
+
     # Метод отправки рецепта
-    def send_recipe(self):
+    def send_recipe(self, update=False):
         name = self.recipe_name_entry.get().strip()
         try:
             cocking_time = int(self.recipe_cocking_time_entry.get().strip())
         except ValueError:
             messagebox.showerror("Ошибка", "Время приготовления должно быть целым числом")
 
-        ingredients = self.product_textbox.get('1.0', 'end').strip()
-        description = self.description_textbox.get('1.0', 'end').strip()
+        ingredients = self.recipe_product_textbox.get('1.0', 'end').strip()
+        description = self.recipe_description_textbox.get('1.0', 'end').strip()
         try:
             picture_path = self.selected_image_path
         except:
@@ -273,17 +365,11 @@ class AddRecipeFrame(ctk.CTkFrame):
             ingredients = [i.strip().lower() for i in ingredients.split(',')]
             recipe = Recipe(self.master.user.getUsername() ,name, description, picture_path, cocking_time, ingredients)
 
-            # Это для тестирования
-            print(f"Название рецепта: {recipe.getName()}")
-            print(f"Время приготовления: {recipe.getCookingTime()}")
-            print(f"Описание: {recipe.getDescription()}")
-            print(f"Список продуктов: {recipe.getProductList()}")
-            print(f"Подтвержден: {recipe.getConfirmed()}")
-            print(f"Путь к изображению: {recipe.getPicturePath()}")
-            print("Автор ", recipe.getAuthor())
-
-            # Сохраняем рецепт
-            save_recipe(recipe)
+            # Сохраняем или заменяем существующий рецепт
+            if update:
+                update_recipe_by_id(self.recipe, recipe)
+            else:
+                save_recipe(recipe)
 
             self.master.open_main_frame()
 
@@ -294,67 +380,25 @@ class AddRecipeFrame(ctk.CTkFrame):
         print("Вы отправили рецепт")
 
     def load_image_dialog(self):
-        picture_path = filedialog.askopenfilename(
-            title="Выберите изображение",
-            filetypes=[("Изображения", "*.png *.jpg *.jpeg"), ("Все файлы", "*.*")]
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image files", "*.jpg *.jpeg *.png")]
         )
-        if picture_path:
-            print(f"Вы выбрали картинку на пути: {picture_path}")
+        if file_path:
+            self.selected_image_path = file_path
             try:
-                # Загружаем картинку с помощью Pillow
-                original_image = Image.open(picture_path)
-
-                # Получаем размер фрейма для изображения
-                frame_width = self.recipe_photo_frame.winfo_width()
-                frame_height = self.recipe_photo_frame.winfo_height()
-
-                # Масштабируем изображение с сохранением пропорций
-                image_ratio = original_image.width / original_image.height
-                frame_ratio = frame_width / frame_height
-
-                if frame_ratio > image_ratio:
-                    # Подгоняем по высоте
-                    new_height = frame_height
-                    new_width = int(new_height * image_ratio)
-                else:
-                    # Подгоняем по ширине
-                    new_width = frame_width
-                    new_height = int(new_width / image_ratio)
-
-                resized_image = original_image.resize((new_width, new_height), Image.LANCZOS)
-
-                # Конвертируем для CTkImage
-                ctk_image = ctk.CTkImage(
-                    light_image=resized_image,
-                    dark_image=resized_image,
-                    size=(new_width, new_height)
+                img = Image.open(file_path)
+                img = self.resize_image(img, 280, 180)
+                self.recipe_image = ctk.CTkImage(
+                    light_image=img,
+                    dark_image=img,
+                    size=(280, 180)
                 )
-
-                for widget in self.recipe_photo_frame.winfo_children():
-                    widget.destroy()
-
-                # Создаем Label для отображения изображения
-                image_label = ctk.CTkLabel(
-                    self.recipe_photo_frame,
-                    image=ctk_image,
+                self.recipe_image_label.configure(
+                    image=self.recipe_image,
                     text=""
                 )
-                image_label.pack(expand=True)
-
-                # Сохраняем путь к изображению для следующей отправки
-                self.selected_image_path = picture_path
-
             except Exception as e:
                 messagebox.showerror("Ошибка", f"Не удалось загрузить изображение: {str(e)}")
-            return
-        else:
-            return
-
-
-import customtkinter as ctk
-from PIL import Image, ImageTk
-import os
-
 
 class ShowRecipeFrame(ctk.CTkFrame):
     def __init__(self, master, recipe):
@@ -389,7 +433,7 @@ class ShowRecipeFrame(ctk.CTkFrame):
         # Название рецепта и автор
         ctk.CTkLabel(
             master=self.show_recipe_frame,
-            text=f"{self.recipe.getName()} by {self.recipe.getAuthor()}",
+            text=f"{self.recipe.getName()} by {self.recipe.getAuthor()} ({self.recipe.getCookingTime()} мин.)",
             font=('Century Gothic', 24, 'bold'),
         ).place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
@@ -499,7 +543,7 @@ class UserProfileFrame(ctk.CTkFrame):
         super().__init__(master)
 
         self.master = master
-        self.recipes = load_recipes(by_author=self.master.user.getUsername())
+        self.recipes = load_recipes(by_author=self.master.user.getUsername(), only_confirmed=False)
 
         self.setup_user_profile_frame()
 
@@ -520,6 +564,15 @@ class UserProfileFrame(ctk.CTkFrame):
             command=self.master.open_main_frame
         )
         self.back_to_main_button.place(x=10, y=10)
+
+        self.refresh_button = ctk.CTkButton(
+            master=self.header_frame,
+            width=100,
+            text="Обновить",
+            corner_radius=6,
+            command=self.display_recipes
+        )
+        self.refresh_button.place(x=1160, y=10)
 
         ctk.CTkLabel(
             master=self.header_frame,
@@ -547,6 +600,7 @@ class UserProfileFrame(ctk.CTkFrame):
 
     # Метод отображения рецептов
     def display_recipes(self):
+        self.recipes = load_recipes(by_author=self.master.user.getUsername(), only_confirmed=False)
         # Очищаем контейнер перед добавлением новых карточек
         for widget in self.recipes_container.winfo_children():
             widget.destroy()

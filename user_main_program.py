@@ -12,6 +12,7 @@ class MainApp(ctk.CTk):
         self.geometry(f"1280x720+100+100")   # Standard size 600x400
         self.title("TastyHub")
         self.iconbitmap("images/icon.ico")
+        self.resizable(width=False, height=False)
         # Create the main frame
         self.main_frame = MainFrame(self)
         self.main_frame.pack(fill="both", expand=True)
@@ -49,6 +50,14 @@ class MainApp(ctk.CTk):
         self.user_profile_frame = UserProfileFrame(self)
         self.frames['user_profile_frame'] = self.user_profile_frame
         self.user_profile_frame.pack(fill="both", expand=True)
+
+    def open_edit_recipe_frame(self, recipe):
+        # Закрываем фрейм профиля пользователя
+        self.user_profile_frame.destroy()
+        # Открываем фрейм редактирования рецепта
+        self.edit_recipe_frame = AddRecipeFrame(self, recipe)
+        self.frames['edit_recipe_frame'] = self.edit_recipe_frame
+        self.edit_recipe_frame.pack(fill="both", expand=True)
 
     # Функция удаления всех фреймов
     def destroy_all_frames(self):

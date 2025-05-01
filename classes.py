@@ -102,7 +102,9 @@ class RecipeCard(ctk.CTkFrame):
             fg_color=theme['recipe_card_fg_color'],
             corner_radius=10,
             border_width=1,
-            border_color="#e0e0e0"
+            border_color="#e0e0e0",
+            width=220,
+            height=320
         )
         self.main_program = main_program
         self.recipe = recipe
@@ -116,9 +118,10 @@ class RecipeCard(ctk.CTkFrame):
             text=recipe.getName(),
             font=("Arial", 14, "bold"),
             wraplength=180,
-            text_color=theme['text_color']
+            text_color=theme['text_color'],
+            height=40
         )
-        self.name_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
+        self.name_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="n")
 
         # Изображение (заглушка или загруженное)
         self.image_label = ctk.CTkLabel(
@@ -139,7 +142,8 @@ class RecipeCard(ctk.CTkFrame):
             text=short_desc,
             font=("Arial", 11),
             wraplength=180,
-            justify="left"
+            justify="left",
+            height=60
         )
         self.desc_label.grid(row=2, column=0, padx=10, pady=5)
 
