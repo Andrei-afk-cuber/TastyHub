@@ -14,6 +14,8 @@ class MainFrame(ctk.CTkFrame):
         self.master = master
         # Загружаем рецепты
         self.recipes = load_recipes()
+        # Переменная для поиска
+        self.radiobutton_variable = ctk.StringVar(value="name")
 
         self.setup_main_frame()
 
@@ -68,6 +70,7 @@ class MainFrame(ctk.CTkFrame):
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
+            command = self.search_recipes
         )
         self.search_button.place(x=980, y=60)
 
@@ -84,11 +87,11 @@ class MainFrame(ctk.CTkFrame):
         )
         self.add_recipe_button.place(x=10, y=10)
 
-        # Кнопка откртия профиля пользователя
+        # Кнопка открытия профиля пользователя
         self.user_profile_button = ctk.CTkButton(
             master=self.main_frame,
             width=100,
-            text="Профиль",
+            text="Мои публикации",
             corner_radius=6,
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
@@ -97,7 +100,25 @@ class MainFrame(ctk.CTkFrame):
         )
         self.user_profile_button.place(x=1040, y=10)
 
+        search_by_name = ctk.CTkRadioButton(
+            master=self.main_frame,
+            text="По имени",
+            value="name",
+            variable=self.radiobutton_variable,
+            fg_color=theme['fg_color'],
+            hover_color=theme['hover_color'],
+        )
+        search_by_name.place(relx=0.3, y=110)
 
+        search_by_ingredients = ctk.CTkRadioButton(
+            master=self.main_frame,
+            text="По ингредиентам",
+            value="ingredients",
+            variable=self.radiobutton_variable,
+            fg_color=theme['fg_color'],
+            hover_color=theme['hover_color'],
+        )
+        search_by_ingredients.place(relx=0.5, y=110)
 
         # Создаем фрейм для отображения карточек рецептов
         self.recipes_container = ctk.CTkScrollableFrame(
@@ -116,8 +137,12 @@ class MainFrame(ctk.CTkFrame):
         self.master.destroy()
 
     # Метод отображения рецептов
-    def display_recipes(self):
-        self.recipes = load_recipes()
+    def display_recipes(self, by_name=None):
+        if by_name == "" or by_name is None:
+            self.recipes = load_recipes()
+        else:
+            self.recipes = load_recipes(by_name=by_name)
+
         # Очищаем контейнер перед добавлением новых карточек
         for widget in self.recipes_container.winfo_children():
             widget.destroy()
@@ -131,8 +156,14 @@ class MainFrame(ctk.CTkFrame):
             )
             card.grid(row=i//5, column=i%5, padx=10, pady=10)
 
-    def refresh_recipes(self):
-        pass
+    def search_recipes(self):
+        search_request = self.search_entry.get().strip()
+
+        if self.radiobutton_variable.get() == "name":
+            print("Поиск по названию рецепта")
+            self.display_recipes(by_name=search_request)
+        elif self.radiobutton_variable.get() == "ingredients":
+            print("Поиск по ингредиентам")
 
 class AddRecipeFrame(ctk.CTkFrame):
     def __init__(self, master, recipe=None):

@@ -23,7 +23,7 @@ def close_database_connection(db):
         db.close()
 
 # Функция загрузки рецептов
-def load_recipes(only_confirmed=True, limit=None, by_author=None):
+def load_recipes(only_confirmed=True, limit=None, by_author=None, by_name=None):
     db, cursor = get_database_connection()
     recipes = []
 
@@ -52,6 +52,10 @@ def load_recipes(only_confirmed=True, limit=None, by_author=None):
         if by_author:
             conditions.append("author_name = ?")
             params.append(by_author)
+
+        if by_name:
+            conditions.append("recipe_name LIKE ?")
+            params.append(f"%{by_name}%")
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
