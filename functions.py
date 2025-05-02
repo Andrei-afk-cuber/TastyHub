@@ -23,7 +23,7 @@ def close_database_connection(db):
         db.close()
 
 # Функция загрузки рецептов
-def load_recipes(only_confirmed=True, limit=None, by_author=None, by_name=None):
+def load_recipes(only_confirmed=True, limit=None, by_author=None, by_name=None, by_ingredients=None):
     db, cursor = get_database_connection()
     recipes = []
 
@@ -56,6 +56,16 @@ def load_recipes(only_confirmed=True, limit=None, by_author=None, by_name=None):
         if by_name:
             conditions.append("recipe_name LIKE ?")
             params.append(f"%{by_name}%")
+
+        if by_ingredients:
+            # Разбиваем строку ингредиентов на список
+            ingredients = [i.strip() for i in by_ingredients.split(",")]
+            # Для каждого ингредиента добавляем условие поиска
+            ing_conditions = []
+            for ingredient in ingredients:
+                ing_conditions.append("products LIKE ?")
+                params.append(f"%{ingredient}%")
+            conditions.append(f"({' AND '.join(ing_conditions)})")
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
@@ -381,8 +391,7 @@ class EditableRecipeCard(ctk.CTkFrame):
                         print(f"Не удалось удалить изображение: {e}")
                         # Можно добавить очередь на удаление при следующем запуске
 
-            messagebox.showinfo("Успех", "Рецепт успешно удален."
-                                         " Чтобы увидеть изменения перезайдите на текущий экран", parent=self)
+            messagebox.showinfo("Успех", "Рецепт успешно удален.", parent=self)
 
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось удалить рецепт: {str(e)}", parent=self)

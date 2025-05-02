@@ -115,7 +115,7 @@ class RecipeCard(ctk.CTkFrame):
         # Заголовок (название рецепта)
         self.name_label = ctk.CTkLabel(
             self,
-            text=recipe.getName(),
+            text=recipe.getName().capitalize(),
             font=("Arial", 14, "bold"),
             wraplength=180,
             text_color=theme['text_color'],

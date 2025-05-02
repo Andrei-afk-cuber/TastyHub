@@ -137,11 +137,13 @@ class MainFrame(ctk.CTkFrame):
         self.master.destroy()
 
     # Метод отображения рецептов
-    def display_recipes(self, by_name=None):
-        if by_name == "" or by_name is None:
-            self.recipes = load_recipes()
-        else:
+    def display_recipes(self, by_name=None, by_ingredients=None):
+        if by_name:
             self.recipes = load_recipes(by_name=by_name)
+        elif by_ingredients:
+            self.recipes = load_recipes(by_ingredients=by_ingredients)
+        else:
+            self.recipes = load_recipes()
 
         # Очищаем контейнер перед добавлением новых карточек
         for widget in self.recipes_container.winfo_children():
@@ -156,14 +158,20 @@ class MainFrame(ctk.CTkFrame):
             )
             card.grid(row=i//5, column=i%5, padx=10, pady=10)
 
+    # Метод для поиска рецептов по параметрам
     def search_recipes(self):
-        search_request = self.search_entry.get().strip()
+        search_request = self.search_entry.get().strip().lower()
+
+        if not search_request:
+            self.display_recipes()
+            return
 
         if self.radiobutton_variable.get() == "name":
             print("Поиск по названию рецепта")
             self.display_recipes(by_name=search_request)
         elif self.radiobutton_variable.get() == "ingredients":
             print("Поиск по ингредиентам")
+            self.display_recipes(by_ingredients=search_request)
 
 class AddRecipeFrame(ctk.CTkFrame):
     def __init__(self, master, recipe=None):
@@ -379,7 +387,7 @@ class AddRecipeFrame(ctk.CTkFrame):
 
     # Метод отправки рецепта
     def send_recipe(self, update=False):
-        name = self.recipe_name_entry.get().strip()
+        name = self.recipe_name_entry.get().strip().lower()
         try:
             cocking_time = int(self.recipe_cocking_time_entry.get().strip())
         except ValueError:
