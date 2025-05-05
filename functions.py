@@ -1,9 +1,6 @@
 import sqlite3
 import os
 import shutil
-
-from customtkinter import CTkLabel
-
 from classes import Recipe, User
 from tkinter import messagebox
 from PIL import ImageTk, Image
@@ -97,6 +94,58 @@ def load_recipes(only_confirmed=True, limit=None, by_author=None, by_name=None, 
                 continue
 
         return recipes
+
+    except sqlite3.Error as e:
+        print(f"Ошибка: ", e)
+        return None
+
+    finally:
+        close_database_connection(db)
+
+# Функция для загрузки пользователей
+def load_users():
+    db, cursor = get_database_connection()
+    users = []
+
+    try:
+        # Создание таблицы users если она не найдена
+        cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL,
+                admin INTEGER NOT NULL DEFAULT 0,
+                authorized INTEGER NOT NULL DEFAULT 0
+                )
+                """)
+
+        query = "SELECT * FROM users"
+        params = []
+        conditions = []
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        # Выполняем запрос
+        cursor.execute(query, params)
+        columns = [col[0] for col in cursor.description]
+
+        # Создаем объекты Recipe
+        for row in cursor.fetchall():
+            row_dict = dict(zip(columns, row))
+            try:
+                users.append(User(
+                    id=row_dict["id"],
+                    username=row_dict['username'],
+                    password=row_dict['password'],
+                    admin=bool(row_dict['admin']),
+                    authorized=bool(row_dict['authorized'])
+                ))
+            except Exception as e:
+                print(f"Ошибка создания объекта User: {e}")
+                continue
+
+        return users
 
     except sqlite3.Error as e:
         print(f"Ошибка: ", e)
@@ -254,7 +303,7 @@ class EditableRecipeCard(ctk.CTkFrame):
         # Заголовок (название рецепта)
         self.name_label = ctk.CTkLabel(
             master=self,
-            text=recipe.getName(),
+            text=recipe.getName().capitalize(),
             font=("Aria", 14, "bold"),
             wraplength=180,
             text_color=theme['text_color'],
@@ -300,8 +349,8 @@ class EditableRecipeCard(ctk.CTkFrame):
             text="Удалить",
             width=100,
             height=30,
-            fg_color="#ff4d4d",
-            hover_color="#ff1a1a",
+            fg_color="#db0404",
+            hover_color="#910000",
             text_color="white",
             command=self.confirm_delete
         )
@@ -318,6 +367,172 @@ class EditableRecipeCard(ctk.CTkFrame):
             command=lambda: self.main_program.open_edit_recipe_frame(recipe)
         )
         self.edit_btn.pack(side="left", padx=5)
+
+        self.load_recipe_image()
+
+    def load_recipe_image(self):
+        try:
+            image_path = os.path.join("recipe_images", self.recipe.getPicturePath())
+
+            if os.path.exists(image_path):
+                # Создаем CTkImage
+                self.ctk_image = ctk.CTkImage(
+                    light_image=Image.open(image_path),
+                    dark_image=Image.open(image_path),
+                    size=(180, 120)  # Размеры можно настроить
+                )
+
+                # Устанавливаем изображение
+                self.image_label.configure(
+                    image=self.ctk_image,
+                    text=""
+                )
+            else:
+                self.image_label.configure(
+                    text="Изображение не найдено",
+                    font=('Century Gothic', 12),
+                    text_color="gray"
+                )
+        except Exception as e:
+            print(f"Ошибка загрузки изображения: {e}")
+            self.image_label.configure(
+                text="Ошибка загрузки",
+                font=('Century Gothic', 12),
+                text_color="red"
+            )
+
+    def confirm_delete(self):
+        from tkinter import messagebox
+        answer = messagebox.askyesno(
+            "Подтверждение удаления",
+            f"Вы уверены, что хотите удалить рецепт '{self.recipe.getName()}'?",
+            parent=self
+        )
+        if answer:
+            self.delete_recipe()
+
+    def delete_recipe(self):
+        try:
+            db, cursor = get_database_connection()
+            recipe_id = self.recipe.getId()
+
+            # Сначала удаляем запись из БД
+            cursor.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
+            db.commit()
+
+            # Закрываем изображение, если оно было загружено
+            if hasattr(self, 'ctk_image'):
+                self.image_label.configure(image=None)  # Отключаем изображение от виджета
+                del self.ctk_image  # Удаляем ссылку на CTkImage
+
+            # Удаляем файл изображения с повторными попытками
+            image_path = os.path.join("recipe_images", self.recipe.getPicturePath())
+            if os.path.exists(image_path):
+                try:
+                    os.remove(image_path)
+                except PermissionError:
+                    # Если файл занят, пробуем ещё раз после небольшой паузы
+                    import time
+                    time.sleep(0.5)
+                    try:
+                        os.remove(image_path)
+                    except Exception as e:
+                        print(f"Не удалось удалить изображение: {e}")
+                        # Можно добавить очередь на удаление при следующем запуске
+
+            messagebox.showinfo("Успех", "Рецепт успешно удален.", parent=self)
+
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось удалить рецепт: {str(e)}", parent=self)
+        finally:
+            close_database_connection(db)
+
+# Класс для карточки рецепта (для Администрации)
+class AdminRecipeCard(ctk.CTkFrame):
+    def __init__(self, master, recipe, main_program):
+        super().__init__(
+            master,
+            fg_color=theme['recipe_card_fg_color'],
+            corner_radius=10,
+            border_width=1,
+            width=1230,
+            height=150
+        )
+        self.main_program = main_program
+        self.recipe = recipe
+        self.ctk_image = None  # Для хранения CTkImage
+
+        # Заголовок (название рецепта)
+        self.name_label = ctk.CTkLabel(
+            master=self,
+            text=recipe.getName(),
+            font=("Aria", 14, "bold"),
+            wraplength=180,
+            text_color=theme['text_color'],
+            height=40
+        )
+        self.name_label.place(relx=0.5, rely=0.1, anchor=ctk.CENTER)
+
+        # Название красного цвета, для не подтвержденного рецепта
+        if not recipe.getConfirmed():
+            self.name_label.configure(text_color="red")
+
+        # Изображение (используем CTkLabel + CTkImage)
+        self.image_label = ctk.CTkLabel(
+            self,
+            text="",
+            width=180,
+            height=120,
+            fg_color="transparent",
+            corner_radius=8
+        )
+        self.image_label.place(relx=0.01, rely=0.5, anchor='w')
+
+        # Краткое описание
+        short_desc = (recipe.getDescription()[:100] + "...") if len(
+            recipe.getDescription()) > 100 else recipe.getDescription()
+        self.desc_label = ctk.CTkLabel(
+            self,
+            text=short_desc,
+            font=("Arial", 11),
+            wraplength=180,
+            justify="left",
+            height=60
+        )
+        self.desc_label.place(rely=0.4, relx=0.2, anchor='w')
+
+        # Кнопка "Удалить"
+        self.delete_btn = ctk.CTkButton(
+            master=self,
+            text="Удалить",
+            width=120,
+            height=30,
+            fg_color="#db0404",
+            hover_color="#910000",
+            text_color="white",
+            command=self.confirm_delete
+        )
+        self.delete_btn.place(x=1100, y=40, anchor='w')
+
+        # Кнопка "Редактировать"
+        self.edit_btn = ctk.CTkButton(
+            master=self,
+            text="Редактировать",
+            width=120,
+            height=30,
+            fg_color=theme['fg_color'],
+            hover_color=theme['hover_color'],
+            command=lambda: self.main_program.open_edit_recipe_frame(recipe)
+        )
+        self.edit_btn.place(x=1100, y=80, anchor='w')
+
+        # Если рецепт не одобрен, то кнопка редактировать будет описана, как одобрить
+        if not self.recipe.getConfirmed():
+            self.edit_btn.configure(
+                text="Одобрить",
+                fg_color="#17ad03",
+                hover_color="#0c5c02",
+            )
 
         self.load_recipe_image()
 

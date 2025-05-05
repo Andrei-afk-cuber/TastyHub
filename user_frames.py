@@ -14,6 +14,7 @@ class MainFrame(ctk.CTkFrame):
         self.master = master
         # Загружаем рецепты
         self.recipes = load_recipes()
+
         # Переменная для поиска
         self.radiobutton_variable = ctk.StringVar(value="name")
 
@@ -324,6 +325,7 @@ class AddRecipeFrame(ctk.CTkFrame):
         if self.recipe:
             # Изменяем параметры кнопок
             self.send_recipe_button.configure(text="Сохранить", command=lambda: self.send_recipe(True))
+            self.text.configure(text="Редактирование рецепта")
 
             # Устанавливаем значения для полей рецепта
             self.recipe_name_entry.insert(0, self.recipe.getName())

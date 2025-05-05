@@ -1,6 +1,7 @@
 import customtkinter as ctk
-from admin_frames import MainFrame, UserControlFrame, RecipeControlFrame
+from admin_frames import MainFrame
 from classes import User
+from user_frames import AddRecipeFrame
 
 # Основное окно приложения
 class MainApp(ctk.CTk):
@@ -10,9 +11,11 @@ class MainApp(ctk.CTk):
         self.user = user
 
         self.geometry(f"1280x720+100+100")   # Standard size 600x400
-        self.title("TastyHub Admin Controller")
+        self.title("TastyHub (Администратор)")
         self.iconbitmap("images/icon.ico")
-        # Create the main frame
+        self.resizable(False, False)
+
+        # Создаем основное окно
         self.main_frame = MainFrame(self)
         self.main_frame.pack(fill="both", expand=True)
         self.frames = {}
@@ -23,27 +26,14 @@ class MainApp(ctk.CTk):
         self.main_frame = MainFrame(self)
         self.main_frame.pack(fill="both", expand=True)
 
-    # Метод открытия фрейма управления пользователями
-    def open_user_control_frame(self):
-        # Удаляем основной фрейм
+    # Метод открытия фрейма для редактирования рецепта
+    def open_edit_recipe_frame(self, recipe):
+        # Закрываем фрейм профиля пользователя
         self.main_frame.destroy()
-        # Открываем фрейм контроля пользователей
-        self.user_control_frame = UserControlFrame(self)
-        self.frames['user_control_frame'] = self.user_control_frame
-        self.user_control_frame.pack(fill="both", expand=True)
-
-    # Метод открытия фрейма управления рецептами
-    def open_recipe_control_frame(self):
-        # Удаляем основной фрейм
-        self.main_frame.destroy()
-        # Открываем фрейм управления рецептами
-        self.recipe_control_frame = RecipeControlFrame(self)
-        self.frames['recipe_control_frame'] = self.recipe_control_frame
-        self.recipe_control_frame.pack(fill="both", expand=True)
-
-    # Функция для открытия окна регистрации
-    def open_register_program(self):
-        pass
+        # Открываем фрейм редактирования рецепта
+        self.edit_recipe_frame = AddRecipeFrame(self, recipe)
+        self.frames['edit_recipe_frame'] = self.edit_recipe_frame
+        self.edit_recipe_frame.pack(fill="both", expand=True)
 
     # Функция удаления всех фреймов
     def destroy_all_frames(self):
@@ -52,8 +42,5 @@ class MainApp(ctk.CTk):
             frame.destroy()
         self.frames = {}
 
-
-"""
-Только для тестирования
-"""
+# Раскомментировать при запуске AdminMainProgram
 # MainApp().mainloop()

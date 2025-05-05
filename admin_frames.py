@@ -1,6 +1,10 @@
 import customtkinter as ctk
 from customtkinter import CTkLabel
 from login.config import theme
+from functions import load_users, load_recipes, AdminRecipeCard
+from classes import User, UserCard, RecipeCard
+from PIL import Image
+import os
 
 # Класс основного фрейма приложения
 class MainFrame(ctk.CTkFrame):
@@ -8,12 +12,16 @@ class MainFrame(ctk.CTkFrame):
         super().__init__(master)
         self.master = master
 
+        # Загружаем пользователей и рецепты из БД
+        self.users = None
+        self.recipes = None
+
         self.setup_main_frame()
 
     # Функция для отрисовки основного фрейма
     def setup_main_frame(self):
-        self.main_frame = ctk.CTkFrame(master=self, width=1270, height=150)
-        self.main_frame.place(relx=0.5, rely=0.12, anchor=ctk.CENTER)
+        self.main_frame = ctk.CTkFrame(master=self, width=1270, height=50)
+        self.main_frame.place(relx=0.5, rely=0.05, anchor=ctk.CENTER)
 
         # top text
         self.text = CTkLabel(
@@ -23,7 +31,7 @@ class MainFrame(ctk.CTkFrame):
         )
         self.text.place(x=90, y=45)
 
-        # Exit button
+        # Кнопка выхода
         self.exit_button = ctk.CTkButton(
             master=self.main_frame,
             width=100,
@@ -36,20 +44,8 @@ class MainFrame(ctk.CTkFrame):
         )
         self.exit_button.place(x=1160, y=10)
 
-        # Кнопка выхода из аккаунта
-        self.change_account_button = ctk.CTkButton(
-            master=self.main_frame,
-            width=100,
-            text="Сменить аккаунт",
-            corner_radius=6,
-            fg_color=theme['fg_color'],
-            text_color=theme['text_color'],
-            hover_color=theme['hover_color'],
-            command=self.change_account
-        )
-        self.change_account_button.place(x=10, y=10)
-
-        self.open_user_control_button = ctk.CTkButton(
+        # Кнопка для просмотра пользователей
+        self.users_check_button = ctk.CTkButton(
             master=self.main_frame,
             width=100,
             text="Пользователи",
@@ -57,58 +53,77 @@ class MainFrame(ctk.CTkFrame):
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
-            command=self.master.open_user_control_frame
+            command=self.display_users
         )
-        self.open_user_control_button.place(relx=0.2, y=10)
+        self.users_check_button.place(relx=0.4, y=10)
 
-        self.open_recipe_control_button = ctk.CTkButton(
+        # Кнопка для просмотра рецептов
+        self.recipes_check_button = ctk.CTkButton(
             master=self.main_frame,
             width=100,
             text="Публикации",
-            corner_radius=6,
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
-            command=self.master.open_recipe_control_frame
+            command=self.display_recipes
         )
-        self.open_recipe_control_button.place(relx=0.5, y=10)
+        self.recipes_check_button.place(relx=0.5, y=10)
+
+        # Метка для просмотра только не подтвержденных пользователей/рецептов
+        self.only_authorized_checkbox = ctk.CTkCheckBox(
+            master=self.main_frame,
+            text="Только не подтвержденные",
+            fg_color=theme['fg_color'],
+            text_color=theme['text_color'],
+            hover_color=theme['hover_color'],
+        )
+        self.only_authorized_checkbox.place(x=110, rely=0.5, anchor=ctk.CENTER)
+
+        # Контейнер для размещения на нем информации
+        self.data_container = ctk.CTkScrollableFrame(
+            master=self,
+            width=1250,
+            height=600,
+            fg_color="transparent",
+        )
+        self.data_container.place(relx=0.5, rely=0.55, anchor=ctk.CENTER)
 
     # Функция для закрытия программы
     def close_program(self):
         self.master.destroy()
 
-    # Функция для выхода к окну авторизации
-    def change_account(self):
-        print("Вы попытались сменить аккаунт")
 
-class UserControlFrame(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
+    def display_users(self):
+        # Загружаем пользователей из БД
+        self.users = load_users()
 
-        self.master = master
+        # Очищаем контейнер, перед добавлением новых карточек
+        for widget in self.data_container.winfo_children():
+            widget.destroy()
 
-        self.setup_user_check_frame()
+        # Создаем карточки для каждого пользователя
+        for i, user in enumerate(self.users):
+            card = UserCard(
+                master=self.data_container,
+                user=user,
+                main_program=self.master
+            )
+            card.grid(row=i, column=0, padx=10, pady=5, sticky="ew")
 
-    def setup_user_check_frame(self):
-        self.search_info_label = CTkLabel(
-            master=self.master,
-            text="Окно управления пользователями",
-            font=('Century Gothic', 36),
-        )
-        self.search_info_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+    # Метод для отображения рецептов
+    def display_recipes(self):
+        # Загружаем рецепты из БД
+        self.recipes = load_recipes(only_confirmed=False)
 
-class RecipeControlFrame(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
+        # Очищаем контейнер, перед добавлением новых карточек
+        for widget in self.data_container.winfo_children():
+            widget.destroy()
 
-        self.master = master
-
-        self.setup_recipe_check_frame()
-
-    def setup_recipe_check_frame(self):
-        self.search_info_label = CTkLabel(
-            master=self.master,
-            text="Окно управления рецептами",
-            font=('Century Gothic', 36),
-        )
-        self.search_info_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+        # Создаем карточки для каждого рецепта
+        for i, recipe in enumerate(self.recipes):
+            card = AdminRecipeCard(
+                master=self.data_container,
+                recipe=recipe,
+                main_program=self.master
+            )
+            card.grid(pady=5, padx=5, sticky="ew")

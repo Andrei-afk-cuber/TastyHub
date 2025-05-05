@@ -65,3 +65,5 @@ class MainApp(ctk.CTk):
         for frame_name, frame in self.frames.items():
             frame.destroy()
         self.frames = {}
+
+# MainApp().mainloop()

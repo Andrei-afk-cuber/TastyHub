@@ -112,7 +112,7 @@ class RecipeCard(ctk.CTkFrame):
         # Настройка сетки
         self.grid_columnconfigure(0, weight=1)
 
-        # Заголовок (название рецепта)
+        # Название рецепта
         self.name_label = ctk.CTkLabel(
             self,
             text=recipe.getName().capitalize(),
@@ -123,7 +123,7 @@ class RecipeCard(ctk.CTkFrame):
         )
         self.name_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="n")
 
-        # Изображение (заглушка или загруженное)
+        # Изображение для рецепта
         self.image_label = ctk.CTkLabel(
             self,
             text="",
@@ -198,3 +198,31 @@ class RecipeCard(ctk.CTkFrame):
                 font=('Century Gothic', 14),
                 text_color="red"
             )
+
+class UserCard(ctk.CTkFrame):
+    def __init__(self, master, user, main_program):
+        super().__init__(
+            master,
+            fg_color=theme['recipe_card_fg_color'],
+            corner_radius=10,
+            border_width=1,
+            width=1230,
+            height=60
+        )
+
+        # Метка с логином аккаунта
+        self.username_label = ctk.CTkLabel(
+            master=self,
+            text=user.getUsername(),
+            text_color="green",
+            font=("Century Gothic", 14, "bold"),
+        )
+        self.username_label.place(rely=0.5, relx=0.02,anchor="w")
+
+        # Если пользователь не подтвержден, то делаем его логин красным
+        if not user.isAuthorized():
+            self.username_label.configure(text_color="red")
+
+        # Если пользователь является админом, то его логин синий
+        if user.isAdmin():
+            self.username_label.configure(text_color="blue")
