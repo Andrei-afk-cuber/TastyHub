@@ -39,16 +39,6 @@ class MainFrame(ctk.CTkFrame):
         )
         self.exit_button.place(x=1160, y=10)
 
-        self.refresh_button = ctk.CTkButton(
-            master=self.main_frame,
-            text="Обновить",
-            corner_radius=6,
-            height=40,
-            command=self.display_recipes
-        )
-        self.refresh_button.place(x=1100, y=60)
-
-
         # Поле ввода для поиска
         self.search_entry = ctk.CTkEntry(
             master=self.main_frame,

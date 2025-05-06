@@ -8,6 +8,9 @@ import customtkinter as ctk
 from login.config import theme
 import socket
 import json
+import datetime
+import base64
+import io
 
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 65432
@@ -35,6 +38,37 @@ def close_database_connection(db):
     # Закрываем соединение с БД
     if db:
         db.close()
+
+# Функция обновления рецепта
+def update_recipe(old_recipe, new_recipe, by_admin=False):
+    try:
+        image_data = None
+        image_name = old_recipe.getPicturePath()
+        if old_recipe.getPicturePath() != new_recipe.getPicturePath():
+            image_path = new_recipe.getPicturePath()
+            with open(image_path, 'rb') as img_file:
+                image_data = base64.b64encode(img_file.read()).decode('utf-8')
+            image_name = os.path.basename(image_path)
+        recipe_data = {
+            "id": old_recipe.getId(),
+            "author_name": new_recipe.getAuthor(),
+            "recipe_name": new_recipe.getName(),
+            "description": new_recipe.getDescription(),
+            "cooking_time": new_recipe.getCookingTime(),
+            "products": ', '.join(new_recipe.getProductList()),
+            "image_name": image_name,
+            "image_data": image_data,
+            "old_image": old_recipe.getPicturePath()
+        }
+        response = send_request({
+            "action": "update_recipe",
+            "recipe_data": recipe_data,
+            "by_admin": by_admin
+        })
+        return response.get("status") == "success"
+    except Exception as e:
+        messagebox.showerror("Ошибка", f"Ошибка при обновлении рецепта: {str(e)}")
+        return False
 
 # Функция загрузки рецептов
 def load_recipes(only_confirmed=True, limit=None, by_author=None, by_name=None, by_ingredients=None):
@@ -88,69 +122,70 @@ def load_users():
     return []
 
 # Функция сохранения рецептов
+def copy_image(source_path, destination_folder="recipe_images"):
+    try:
+        if not os.path.exists(source_path):
+            print(f"Ошибка: файла {source_path} не существует")
+            return None
+        os.makedirs(destination_folder, exist_ok=True)
+        filename = os.path.basename(source_path)
+        base, ext = os.path.splitext(filename)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{base}_{timestamp}{ext}"
+        unique_destination = os.path.join(destination_folder, unique_filename)
+        shutil.copy2(source_path, unique_destination)
+        return unique_destination
+    except Exception as e:
+        print(f"Ошибка при копировании: {e}")
+        return None
+
 def save_recipe(recipe):
-    response = send_request({
-        "action": "save_recipe",
-        "recipe_data": {
+    try:
+        image_path = recipe.getPicturePath()
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Файл изображения не найден: {image_path}")
+        img = Image.open(image_path)
+        max_size = (800, 800)
+        img.thumbnail(max_size, Image.LANCZOS)
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=85)
+        image_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        recipe_data = {
             "author_name": recipe.getAuthor(),
             "recipe_name": recipe.getName(),
             "description": recipe.getDescription(),
             "cooking_time": recipe.getCookingTime(),
             "products": ', '.join(recipe.getProductList()),
-            "picture_path": recipe.getPicturePath(),
+            "image_name": os.path.basename(image_path),
+            "image_data": image_data,
             "confirmed": recipe.getConfirmed()
         }
-    })
-
-    if response.get("status") == "success":
-        return response.get("recipe_id")
-    return None
-
-# Функция копирования изображений из одной папки в другую
-def copy_image(source_path, destination_folder="recipe_images"):
-    try:
-        # Проверяем существование исходного файла
-        if not os.path.exists(source_path):
-            print(f"Ошибка: фйла {source_path} не существует")
+        response = send_request({
+            "action": "save_recipe",
+            "recipe_data": recipe_data
+        })
+        if response.get("status") == "success":
+            return response.get("recipe_id")
+        else:
+            messagebox.showerror("Ошибка", response.get("message", "Неизвестная ошибка сервера"))
             return None
-
-        # Проверяем что это файл (а не папка)
-        if not os.path.isfile(source_path):
-            print(f"Ошибка: {source_path} не является файлом")
-            return None
-
-        # Создаем целевую папку, если её нет
-        os.makedirs(destination_folder, exist_ok=True)
-
-        # Получаем имя файла из исходного пути
-        file_name = os.path.basename(source_path)
-
-        # Формируем полный путь назначения
-        destination_path = os.path.join(destination_folder, file_name)
-
-        # Копируем файл
-        shutil.copy2(source_path, destination_path)
-        print(f"Изображение скопировано в {destination_path}")
-        return destination_path
-
     except Exception as e:
-        print(f"Ошибка при копировании: {e}")
+        messagebox.showerror("Ошибка", f"Ошибка при сохранении рецепта: {str(e)}")
         return None
 
 def update_recipe_by_id(old_recipe, new_recipe, by_admin=False):
     response = send_request({
         "action": "update_recipe",
-        "old_recipe_data": {
+        "recipe_data": {
             "id": old_recipe.getId(),
-            "picture_path": old_recipe.getPicturePath()
-        },
-        "new_recipe_data": {
             "author_name": new_recipe.getAuthor(),
             "recipe_name": new_recipe.getName(),
             "description": new_recipe.getDescription(),
             "cooking_time": new_recipe.getCookingTime(),
             "products": ', '.join(new_recipe.getProductList()),
-            "picture_path": new_recipe.getPicturePath()
+            "image_name": os.path.basename(new_recipe.getPicturePath()),
+            "image_data": None,
+            "old_image": old_recipe.getPicturePath()
         },
         "by_admin": by_admin
     })
@@ -167,7 +202,7 @@ def delete_recipe(recipe):
 # Функция для одобрения пользователя
 def accept_user(user):
     response = send_request({
-        "action": "accept_user",
+        "action": "activate_user",
         "user_id": user.getId()
     })
     return response.get("status") == "success"
@@ -308,15 +343,21 @@ class EditableRecipeCard(ctk.CTkFrame):
             )
 
     def confirm_delete(self):
-        from tkinter import messagebox
         answer = messagebox.askyesno(
             "Подтверждение удаления",
             f"Вы уверены, что хотите удалить рецепт '{self.recipe.getName()}'?",
             parent=self
         )
         if answer:
-            self.delete_recipe()
-            self.main_program.user_profile_frame.display_recipes()
+            if delete_recipe(self.recipe):
+                self.destroy()
+                # Обновляем список рецептов в родительском окне
+                if hasattr(self.main_program, 'user_profile_frame'):
+                    self.main_program.user_profile_frame.display_recipes()
+                elif hasattr(self.main_program, 'main_frame'):
+                    self.main_program.main_frame.display_recipes()
+            else:
+                messagebox.showerror("Ошибка", "Не удалось удалить рецепт", parent=self)
 
     def delete_recipe(self):
         try:
