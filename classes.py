@@ -97,6 +97,17 @@ class Recipe(object):
     def setPiсturePath(self, picture_path):
         self.__picture_path = picture_path
 
+    def to_dict(self):
+        return {
+            "id": self.__id,
+            "author": self.__author,
+            "name": self.__name,
+            "description": self.__description,
+            "cooking_time": self.__cooking_time,
+            "product_list": self.__product_list,
+            "confirmed": self.__confirmed,
+            "picture_path": self.__picture_path,
+        }
 
 class RecipeCard(ctk.CTkFrame):
     def __init__(self, master, recipe, main_program):

@@ -35,3 +35,4 @@ class User(object):
 
     def deactivateAccount(self):
         self.__authorized = False
+

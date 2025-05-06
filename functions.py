@@ -6,6 +6,23 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 import customtkinter as ctk
 from login.config import theme
+import socket
+import json
+
+SERVER_HOST = "127.0.0.1"
+SERVER_PORT = 65432
+
+# Функция для отправки запроса
+def send_request(request):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((SERVER_HOST, SERVER_PORT))
+            s.sendall(json.dumps(request).encode('utf-8'))
+            response = s.recv(10240).decode('utf-8')  # Увеличиваем размер буфера
+            return json.loads(response)
+    except (ConnectionError, json.JSONDecodeError) as e:
+        print(f"Network error: {e}")
+        return {"status": "error", "message": "Network error"}
 
 # Функция создания соединения с БД
 def get_database_connection():
@@ -21,174 +38,73 @@ def close_database_connection(db):
 
 # Функция загрузки рецептов
 def load_recipes(only_confirmed=True, limit=None, by_author=None, by_name=None, by_ingredients=None):
-    db, cursor = get_database_connection()
-    recipes = []
+    response = send_request({
+        "action": "load_recipes",
+        "only_confirmed": only_confirmed,
+        "limit": limit,
+        "by_author": by_author,
+        "by_name": by_name,
+        "by_ingredients": by_ingredients
+    })
 
-    try:
-        # Создаем таблицу, если не существует
-        cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS recipes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    author_name TEXT NOT NULL,
-                    recipe_name TEXT NOT NULL,
-                    description TEXT NOT NULL,
-                    cooking_time INTEGER NOT NULL,
-                    products TEXT NOT NULL,
-                    picture_path TEXT NOT NULL,
-                    confirmed INTEGER NOT NULL DEFAULT 0
-                    )
-                    """)
-
-        query = "SELECT * FROM recipes"
-        params = []
-        conditions = []
-
-        if only_confirmed:
-            conditions.append("confirmed = 1")
-
-        if by_author:
-            conditions.append("author_name = ?")
-            params.append(by_author)
-
-        if by_name:
-            conditions.append("recipe_name LIKE ?")
-            params.append(f"%{by_name}%")
-
-        if by_ingredients:
-            # Разбиваем строку ингредиентов на список
-            ingredients = [i.strip() for i in by_ingredients.split(",")]
-            # Для каждого ингредиента добавляем условие поиска
-            ing_conditions = []
-            for ingredient in ingredients:
-                ing_conditions.append("products LIKE ?")
-                params.append(f"%{ingredient}%")
-            conditions.append(f"({' AND '.join(ing_conditions)})")
-
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        if limit is not None:
-            query += " LIMIT ?"
-            params.append(limit)
-
-        # Выполняем запрос
-        cursor.execute(query, params)
-        columns = [col[0] for col in cursor.description]
-
-        # Создаем объекты Recipe
-        for row in cursor.fetchall():
-            row_dict = dict(zip(columns, row))
+    if response.get("status") == "success":
+        recipes = []
+        for recipe_data in response.get("recipes", []):
             try:
                 recipes.append(Recipe(
-                    id=row_dict["id"],
-                    author=row_dict['author_name'],
-                    name=row_dict['recipe_name'],
-                    description=row_dict['description'],
-                    picture_path=row_dict['picture_path'],
-                    cooking_time=row_dict['cooking_time'],
-                    product_list=[p.strip() for p in row_dict['products'].split(',')],
-                    confirmed=bool(row_dict['confirmed'])
+                    id=recipe_data["id"],
+                    author=recipe_data['author_name'],
+                    name=recipe_data['recipe_name'],
+                    description=recipe_data['description'],
+                    picture_path=recipe_data['picture_path'],
+                    cooking_time=recipe_data['cooking_time'],
+                    product_list=[p.strip() for p in recipe_data['products'].split(',')],
+                    confirmed=recipe_data['confirmed']
                 ))
             except Exception as e:
-                print(f"Ошибка создания объекта Recipe: {e}")
+                print(f"Error creating Recipe object: {e}")
                 continue
-
         return recipes
-
-    except sqlite3.Error as e:
-        print(f"Ошибка: ", e)
-        return None
-
-    finally:
-        close_database_connection(db)
+    return []
 
 # Функция для загрузки пользователей
 def load_users():
-    db, cursor = get_database_connection()
-    users = []
-
-    try:
-        # Создание таблицы users если она не найдена
-        cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                admin INTEGER NOT NULL DEFAULT 0,
-                authorized INTEGER NOT NULL DEFAULT 0
-                )
-                """)
-
-        query = "SELECT * FROM users"
-        params = []
-        conditions = []
-
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        # Выполняем запрос
-        cursor.execute(query, params)
-        columns = [col[0] for col in cursor.description]
-
-        # Создаем объекты Recipe
-        for row in cursor.fetchall():
-            row_dict = dict(zip(columns, row))
+    response = send_request({"action": "load_users"})
+    if response.get("status") == "success":
+        users = []
+        for user_data in response.get("users", []):
             try:
                 users.append(User(
-                    id=row_dict["id"],
-                    username=row_dict['username'],
-                    password=row_dict['password'],
-                    admin=bool(row_dict['admin']),
-                    authorized=bool(row_dict['authorized'])
+                    id=user_data["id"],
+                    username=user_data['username'],
+                    password=user_data['password'],
+                    admin=user_data['admin'],
+                    authorized=user_data['authorized']
                 ))
             except Exception as e:
-                print(f"Ошибка создания объекта User: {e}")
+                print(f"Error creating User object: {e}")
                 continue
-
         return users
-
-    except sqlite3.Error as e:
-        print(f"Ошибка: ", e)
-        return None
-
-    finally:
-        close_database_connection(db)
+    return []
 
 # Функция сохранения рецептов
 def save_recipe(recipe):
+    response = send_request({
+        "action": "save_recipe",
+        "recipe_data": {
+            "author_name": recipe.getAuthor(),
+            "recipe_name": recipe.getName(),
+            "description": recipe.getDescription(),
+            "cooking_time": recipe.getCookingTime(),
+            "products": ', '.join(recipe.getProductList()),
+            "picture_path": recipe.getPicturePath(),
+            "confirmed": recipe.getConfirmed()
+        }
+    })
 
-    # Преобразуем необходимые элементы для размещения в БД
-    products = ', '.join(recipe.getProductList())
-    image_filename = os.path.basename(recipe.getPicturePath())
-
-    # Сохраняем картинку блюда в папке с проектом
-    copy_image(recipe.getPicturePath())
-
-    db, cursor = get_database_connection()
-
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS recipes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            author_name TEXT NOT NULL,
-            recipe_name TEXT NOT NULL,
-            description TEXT NOT NULL,
-            cooking_time INTEGER NOT NULL,
-            products TEXT NOT NULL,
-            picture_path TEXT NOT NULL,
-            confirmed INTEGER NOT NULL DEFAULT 0
-            )
-            """)
-
-        # Вставляем данные в БД
-        cursor.execute("INSERT INTO recipes (author_name, recipe_name, description, cooking_time, products, picture_path, confirmed) VALUES (?, ?, ? , ?, ?, ?, ?)",
-                       (recipe.getAuthor(), recipe.getName(), recipe.getDescription(), recipe.getCookingTime(), products, image_filename, int(recipe.getConfirmed())))
-        db.commit()
-
-    except sqlite3.Error as e:
-        print(f"Ошибка при сохранении рецепта: {e}")
-    finally:
-        close_database_connection(db)
+    if response.get("status") == "success":
+        return response.get("recipe_id")
+    return None
 
 # Функция копирования изображений из одной папки в другую
 def copy_image(source_path, destination_folder="recipe_images"):
@@ -222,155 +138,54 @@ def copy_image(source_path, destination_folder="recipe_images"):
         return None
 
 def update_recipe_by_id(old_recipe, new_recipe, by_admin=False):
-    db, cursor = get_database_connection()
-    try:
-        # Получаем соединение с БД
-        db, cursor = get_database_connection()
+    response = send_request({
+        "action": "update_recipe",
+        "old_recipe_data": {
+            "id": old_recipe.getId(),
+            "picture_path": old_recipe.getPicturePath()
+        },
+        "new_recipe_data": {
+            "author_name": new_recipe.getAuthor(),
+            "recipe_name": new_recipe.getName(),
+            "description": new_recipe.getDescription(),
+            "cooking_time": new_recipe.getCookingTime(),
+            "products": ', '.join(new_recipe.getProductList()),
+            "picture_path": new_recipe.getPicturePath()
+        },
+        "by_admin": by_admin
+    })
+    return response.get("status") == "success"
 
-        # Получаем ID рецепта
-        recipe_id = old_recipe.getId()
-        if not recipe_id:
-            raise ValueError("Рецепт не содержит ID")
-
-        # Устанавливаем значение confirmed в False или в True, в зависимости от действующего лица
-        if by_admin:
-            new_recipe.setConfirmed(True)
-        else:
-            new_recipe.setConfirmed(False)
-
-        # Преобразуем необходимые элементы для размещения в БД
-        products = ', '.join(new_recipe.getProductList())
-        image_filename = os.path.basename(new_recipe.getPicturePath())
-
-        # 1. Удаляем старую версию рецепта
-        cursor.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
-
-        # 2. Вставляем новую версию с тем же ID
-        cursor.execute("""
-                    INSERT INTO recipes (
-                        id, 
-                        author_name, 
-                        recipe_name, 
-                        description, 
-                        cooking_time, 
-                        products, 
-                        picture_path, 
-                        confirmed
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-            recipe_id,
-            new_recipe.getAuthor(),
-            new_recipe.getName(),
-            new_recipe.getDescription(),
-            new_recipe.getCookingTime(),
-            products,
-            image_filename,
-            int(new_recipe.getConfirmed())
-        ))
-
-        db.commit()
-        return True
-    except sqlite3.Error as e:
-        print(f"Ошибка обновления рецепта: {e}")
-        if db:
-            db.rollback()
-        return False
-    except Exception as e:
-        print(f"Неизвестная ошибка: {e}")
-        if db:
-            db.rollback()
-        return False
-    finally:
-        if db:
-            close_database_connection(db)
-
-def delete_user(user):
-    try:
-        db, cursor = get_database_connection()
-        user_id = user.getId()
-
-        # Сначала удаляем запись из БД
-        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
-        db.commit()
-
-    except Exception as e:
-        messagebox.showerror("Ошибка", f"Не удалось удалить пользователя: {str(e)}")
-    finally:
-        close_database_connection(db)
+# Функция удаления рецепта
+def delete_recipe(recipe):
+    response = send_request({
+        "action": "delete_recipe",
+        "recipe_id": recipe.getId()
+    })
+    return response.get("status") == "success"
 
 # Функция для одобрения пользователя
 def accept_user(user):
-    db, cursor = None, None
-    try:
-        # Получаем соединение с БД
-        db, cursor = get_database_connection()
-
-        # Проверяем наличие пользователя и его ID
-        if not user or not user.getId():
-            raise ValueError("Некорректный объект пользователя или отсутствует ID")
-
-        # Обновляем статус пользователя (но это не влияет на БД)
-        user.activateAccount()
-
-        # Обновляем запись в БД (правильный способ)
-        cursor.execute("""
-            UPDATE users 
-            SET authorized = ? 
-            WHERE id = ?
-        """, (1, user.getId()))  # 1 = True для authorized
-
-        db.commit()
-        return True
-
-    except sqlite3.Error as e:
-        print(f"Ошибка базы данных: {e}")
-        if db:
-            db.rollback()
-        return False
-    except Exception as e:
-        print(f"Неизвестная ошибка: {e}")
-        if db:
-            db.rollback()
-        return False
-    finally:
-        if db:
-            close_database_connection(db)
+    response = send_request({
+        "action": "accept_user",
+        "user_id": user.getId()
+    })
+    return response.get("status") == "success"
 
 # Функция для выдачи админки
 def grant_admin_privileges(user):
-    db, cursor = None, None
-    try:
-        # Получаем соединение с БД
-        db, cursor = get_database_connection()
+    response = send_request({
+        "action": "grant_admin_privileges",
+        "user_id": user.getId()
+    })
+    return response.get("status") == "success"
 
-        # Проверяем валидность пользователя
-        if not user or not user.getId():
-            raise ValueError("Некорректный объект пользователя или отсутствует ID")
-
-        # Обновляем запись в БД
-        cursor.execute("""
-            UPDATE users 
-            SET admin = ?,
-                authorized = ?
-            WHERE id = ?
-        """, (1, 1, user.getId()))
-
-        db.commit()
-        return True
-
-    except sqlite3.Error as e:
-        print(f"Ошибка базы данных при выдаче прав администратора: {e}")
-        if db:
-            db.rollback()
-        return False
-    except Exception as e:
-        print(f"Неизвестная ошибка: {e}")
-        if db:
-            db.rollback()
-        return False
-    finally:
-        if db:
-            close_database_connection(db)
+def delete_user(user):
+    response = send_request({
+        "action": "delete_user",
+        "user_id": user.getId()
+    })
+    return response.get("status") == "success"
 
 # Класс карточки рецепта, с возможностью редактирования
 class EditableRecipeCard(ctk.CTkFrame):
