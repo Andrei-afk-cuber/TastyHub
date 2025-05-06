@@ -31,7 +31,7 @@ class MainApp(ctk.CTk):
         # Закрываем фрейм профиля пользователя
         self.main_frame.destroy()
         # Открываем фрейм редактирования рецепта
-        self.edit_recipe_frame = AddRecipeFrame(self, recipe)
+        self.edit_recipe_frame = AddRecipeFrame(self, recipe, admin=True)
         self.frames['edit_recipe_frame'] = self.edit_recipe_frame
         self.edit_recipe_frame.pack(fill="both", expand=True)
 

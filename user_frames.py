@@ -157,7 +157,7 @@ class MainFrame(ctk.CTkFrame):
                 recipe=recipe,
                 main_program=self.master
             )
-            card.grid(row=i//5, column=i%5, padx=10, pady=10)
+            card.grid(row=i//5, column=i%5, padx=20, pady=10)
 
     # Метод для поиска рецептов по параметрам
     def search_recipes(self):
@@ -175,11 +175,12 @@ class MainFrame(ctk.CTkFrame):
             self.display_recipes(by_ingredients=search_request)
 
 class AddRecipeFrame(ctk.CTkFrame):
-    def __init__(self, master, recipe=None):
+    def __init__(self, master, recipe=None, admin=False):
         super().__init__(master)
 
         self.master = master
         self.recipe = recipe
+        self.admin = admin
         self.selected_image_path = None
 
         self.setup_add_recipe_frame()
@@ -286,11 +287,12 @@ class AddRecipeFrame(ctk.CTkFrame):
             master=self.recipe_data_frame,
             fg_color=theme['fg_color'],
             hover_color=theme['hover_color'],
-            font=('Century Gothic', 24),
+            corner_radius=6,
+            font=('Century Gothic', 12),
             text="Загрузить изображение",
             command=self.load_image_dialog
         )
-        self.load_image_button.place(relx=0.7, y=10)
+        self.load_image_button.place(relx=0.5, y=260, anchor=ctk.CENTER)
 
         # метка описания
         ctk.CTkLabel(
@@ -317,14 +319,15 @@ class AddRecipeFrame(ctk.CTkFrame):
             fg_color=theme['fg_color'],
             text_color=theme['text_color'],
             hover_color=theme['hover_color'],
+            corner_radius=6,
             font=('Century Gothic', 24),
             command=self.send_recipe
         )
-        self.send_recipe_button.place(relx=0.87, y=550)
+        self.send_recipe_button.place(relx=0.87, y=570)
 
         if self.recipe:
             # Изменяем параметры кнопок
-            self.send_recipe_button.configure(text="Сохранить", command=lambda: self.send_recipe(True))
+            self.send_recipe_button.configure(text="Сохранить", command=lambda: self.send_recipe(update=True, by_admin=self.admin))
             self.text.configure(text="Редактирование рецепта")
 
             # Устанавливаем значения для полей рецепта
@@ -388,7 +391,7 @@ class AddRecipeFrame(ctk.CTkFrame):
         return img.resize((new_width, new_height), Image.LANCZOS)
 
     # Метод отправки рецепта
-    def send_recipe(self, update=False):
+    def send_recipe(self, update=False, by_admin=False):
         name = self.recipe_name_entry.get().strip().lower()
         try:
             cocking_time = int(self.recipe_cocking_time_entry.get().strip())
@@ -402,13 +405,19 @@ class AddRecipeFrame(ctk.CTkFrame):
         except:
             messagebox.showerror("Ошибка", "Выберите картинку для рецепта")
 
+
         if name and cocking_time and ingredients and description and picture_path:
+            if self.recipe:
+                author = self.recipe.getAuthor()
+            else:
+                author = self.master.user.getUsername()
+
             ingredients = [i.strip().lower() for i in ingredients.split(',')]
-            recipe = Recipe(self.master.user.getUsername() ,name, description, picture_path, cocking_time, ingredients)
+            recipe = Recipe(author ,name, description, picture_path, cocking_time, ingredients)
 
             # Сохраняем или заменяем существующий рецепт
             if update:
-                update_recipe_by_id(self.recipe, recipe)
+                update_recipe_by_id(self.recipe, recipe, by_admin=by_admin)
             else:
                 save_recipe(recipe)
 
@@ -606,15 +615,6 @@ class UserProfileFrame(ctk.CTkFrame):
         )
         self.back_to_main_button.place(x=10, y=10)
 
-        self.refresh_button = ctk.CTkButton(
-            master=self.header_frame,
-            width=100,
-            text="Обновить",
-            corner_radius=6,
-            command=self.display_recipes
-        )
-        self.refresh_button.place(x=1160, y=10)
-
         ctk.CTkLabel(
             master=self.header_frame,
             text=f"Профиль пользователя {self.master.user.getUsername()}",
@@ -653,4 +653,4 @@ class UserProfileFrame(ctk.CTkFrame):
                 recipe=recipe,
                 main_program=self.master
             )
-            card.grid(row=i // 5, column=i % 5, padx=10, pady=10)
+            card.grid(row=i // 5, column=i % 5, padx=5, pady=10)

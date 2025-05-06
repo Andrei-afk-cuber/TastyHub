@@ -79,6 +79,9 @@ class Recipe(object):
     def setName(self, name):
         self.__name = name
 
+    def setAuthor(self, author):
+        self.__author = author
+
     def setDescription(self, description):
         self.__description = description
 
@@ -198,31 +201,3 @@ class RecipeCard(ctk.CTkFrame):
                 font=('Century Gothic', 14),
                 text_color="red"
             )
-
-class UserCard(ctk.CTkFrame):
-    def __init__(self, master, user, main_program):
-        super().__init__(
-            master,
-            fg_color=theme['recipe_card_fg_color'],
-            corner_radius=10,
-            border_width=1,
-            width=1230,
-            height=60
-        )
-
-        # Метка с логином аккаунта
-        self.username_label = ctk.CTkLabel(
-            master=self,
-            text=user.getUsername(),
-            text_color="green",
-            font=("Century Gothic", 14, "bold"),
-        )
-        self.username_label.place(rely=0.5, relx=0.02,anchor="w")
-
-        # Если пользователь не подтвержден, то делаем его логин красным
-        if not user.isAuthorized():
-            self.username_label.configure(text_color="red")
-
-        # Если пользователь является админом, то его логин синий
-        if user.isAdmin():
-            self.username_label.configure(text_color="blue")

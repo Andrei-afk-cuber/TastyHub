@@ -221,7 +221,7 @@ def copy_image(source_path, destination_folder="recipe_images"):
         print(f"Ошибка при копировании: {e}")
         return None
 
-def update_recipe_by_id(old_recipe, new_recipe):
+def update_recipe_by_id(old_recipe, new_recipe, by_admin=False):
     db, cursor = get_database_connection()
     try:
         # Получаем соединение с БД
@@ -232,8 +232,11 @@ def update_recipe_by_id(old_recipe, new_recipe):
         if not recipe_id:
             raise ValueError("Рецепт не содержит ID")
 
-        # Устанавливаем значение confirmed в False
-        new_recipe.setConfirmed(False)
+        # Устанавливаем значение confirmed в False или в True, в зависимости от действующего лица
+        if by_admin:
+            new_recipe.setConfirmed(True)
+        else:
+            new_recipe.setConfirmed(False)
 
         # Преобразуем необходимые элементы для размещения в БД
         products = ', '.join(new_recipe.getProductList())
@@ -269,6 +272,94 @@ def update_recipe_by_id(old_recipe, new_recipe):
         return True
     except sqlite3.Error as e:
         print(f"Ошибка обновления рецепта: {e}")
+        if db:
+            db.rollback()
+        return False
+    except Exception as e:
+        print(f"Неизвестная ошибка: {e}")
+        if db:
+            db.rollback()
+        return False
+    finally:
+        if db:
+            close_database_connection(db)
+
+def delete_user(user):
+    try:
+        db, cursor = get_database_connection()
+        user_id = user.getId()
+
+        # Сначала удаляем запись из БД
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        db.commit()
+
+    except Exception as e:
+        messagebox.showerror("Ошибка", f"Не удалось удалить пользователя: {str(e)}")
+    finally:
+        close_database_connection(db)
+
+# Функция для одобрения пользователя
+def accept_user(user):
+    db, cursor = None, None
+    try:
+        # Получаем соединение с БД
+        db, cursor = get_database_connection()
+
+        # Проверяем наличие пользователя и его ID
+        if not user or not user.getId():
+            raise ValueError("Некорректный объект пользователя или отсутствует ID")
+
+        # Обновляем статус пользователя (но это не влияет на БД)
+        user.activateAccount()
+
+        # Обновляем запись в БД (правильный способ)
+        cursor.execute("""
+            UPDATE users 
+            SET authorized = ? 
+            WHERE id = ?
+        """, (1, user.getId()))  # 1 = True для authorized
+
+        db.commit()
+        return True
+
+    except sqlite3.Error as e:
+        print(f"Ошибка базы данных: {e}")
+        if db:
+            db.rollback()
+        return False
+    except Exception as e:
+        print(f"Неизвестная ошибка: {e}")
+        if db:
+            db.rollback()
+        return False
+    finally:
+        if db:
+            close_database_connection(db)
+
+# Функция для выдачи админки
+def grant_admin_privileges(user):
+    db, cursor = None, None
+    try:
+        # Получаем соединение с БД
+        db, cursor = get_database_connection()
+
+        # Проверяем валидность пользователя
+        if not user or not user.getId():
+            raise ValueError("Некорректный объект пользователя или отсутствует ID")
+
+        # Обновляем запись в БД
+        cursor.execute("""
+            UPDATE users 
+            SET admin = ?,
+                authorized = ?
+            WHERE id = ?
+        """, (1, 1, user.getId()))
+
+        db.commit()
+        return True
+
+    except sqlite3.Error as e:
+        print(f"Ошибка базы данных при выдаче прав администратора: {e}")
         if db:
             db.rollback()
         return False
@@ -410,6 +501,7 @@ class EditableRecipeCard(ctk.CTkFrame):
         )
         if answer:
             self.delete_recipe()
+            self.main_program.user_profile_frame.display_recipes()
 
     def delete_recipe(self):
         try:
@@ -612,3 +704,109 @@ class AdminRecipeCard(ctk.CTkFrame):
             messagebox.showerror("Ошибка", f"Не удалось удалить рецепт: {str(e)}", parent=self)
         finally:
             close_database_connection(db)
+            # Обновляем список рецептов в программе после удаления
+            self.main_program.main_frame.display_recipes()
+
+class UserCard(ctk.CTkFrame):
+    def __init__(self, master, user, main_program):
+        super().__init__(
+            master,
+            fg_color=theme['recipe_card_fg_color'],
+            corner_radius=10,
+            border_width=1,
+            width=1230,
+            height=60
+        )
+
+        self.user = user
+        self.main_program = main_program
+
+        # Метка с логином аккаунта
+        self.username_label = ctk.CTkLabel(
+            master=self,
+            text=self.user.getUsername(),
+            text_color="green",
+            font=("Century Gothic", 14, "bold"),
+        )
+        self.username_label.place(rely=0.5, relx=0.02,anchor="w")
+
+        # Если пользователь не подтвержден, то делаем его логин красным
+        if not self.user.isAuthorized():
+            self.username_label.configure(text_color="red")
+
+        # Если пользователь является админом, то его логин синий
+        if self.user.isAdmin():
+            self.username_label.configure(text_color="blue")
+
+        # Если этот пользователь вы сам, то ваш ник будет золотым
+        if self.main_program.user.getUsername() == self.user.getUsername():
+            self.username_label.configure(text_color="gold")
+
+        # Кнопка удаления пользователя
+        self.delete_user_button = ctk.CTkButton(
+            master=self,
+            text="Удалить",
+            corner_radius=6,
+            width=100,
+            fg_color="#db0404",
+            hover_color="#910000",
+            command=self.confirm_user_delete
+        )
+        self.delete_user_button.place(rely=0.5, relx=0.9,anchor="w")
+
+        # Кнопка одобрения для не подтвержденных пользователей
+        if not self.user.isAuthorized():
+            self.accept_user_button = ctk.CTkButton(
+                master=self,
+                text="Одобрить",
+                corner_radius=6,
+                width=100,
+                fg_color="#17ad03",
+                hover_color="#0c5c02",
+                command=self.confirm_user_confirm
+            )
+            self.accept_user_button.place(rely=0.5, relx=0.8,anchor="w")
+
+        # Если пользователь не является админом, то появляется кнопка для того, чтобы сделать его админом
+        if not self.user.isAdmin():
+            self.set_admin_button = ctk.CTkButton(
+                master=self,
+                text="Сделать админом",
+                corner_radius=6,
+                width=200,
+                command=self.confirm_user_admin
+            )
+            self.set_admin_button.place(rely=0.5, relx=0.6,anchor="w")
+
+    # Метод для верификации пользователя
+    def confirm_user_confirm(self):
+        answer = messagebox.askyesno(
+            "Подтверждение верификации",
+            f"Вы уверены, что хотите подтвердить пользователя '{self.user.getUsername()}'?",
+            parent=self
+        )
+
+        if answer:
+            accept_user(self.user)
+            self.main_program.main_frame.display_users()
+
+    # Метод для выдачи админки
+    def confirm_user_admin(self):
+        answer = messagebox.askyesno(
+            "Подтверждение админки",
+            f"Вы уверены, что хотите выдать пользователю '{self.user.getUsername()}' права администратора?",
+        )
+        if answer:
+            grant_admin_privileges(self.user)
+            self.main_program.main_frame.display_users()
+
+    # Метод дял подтверждения удаления пользователя
+    def confirm_user_delete(self):
+        answer = messagebox.askyesno(
+            "Подтверждение удаления",
+            f"Вы уверены, что хотите удалить пользователя '{self.user.getUsername()}'?",
+            parent=self
+        )
+        if answer:
+            delete_user(self.user)
+            self.main_program.main_frame.display_users()

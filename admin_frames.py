@@ -1,8 +1,8 @@
 import customtkinter as ctk
 from customtkinter import CTkLabel
 from login.config import theme
-from functions import load_users, load_recipes, AdminRecipeCard
-from classes import User, UserCard, RecipeCard
+from functions import load_users, load_recipes, AdminRecipeCard, UserCard
+from classes import User, RecipeCard
 from PIL import Image
 import os
 
