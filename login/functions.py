@@ -2,9 +2,8 @@ import socket
 import json
 from login.classes import User
 
-SERVER_HOST = 'localhost'
+SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 65432
-
 
 def send_request(request):
     try:
