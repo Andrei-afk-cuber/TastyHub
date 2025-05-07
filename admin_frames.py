@@ -66,16 +66,6 @@ class MainFrame(ctk.CTkFrame):
         )
         self.recipes_check_button.place(relx=0.5, y=10)
 
-        # Метка для просмотра только не подтвержденных пользователей/рецептов
-        self.only_authorized_checkbox = ctk.CTkCheckBox(
-            master=self.main_frame,
-            text="Только не подтвержденные",
-            fg_color=theme['fg_color'],
-            text_color=theme['text_color'],
-            hover_color=theme['hover_color'],
-        )
-        self.only_authorized_checkbox.place(x=110, rely=0.5, anchor=ctk.CENTER)
-
         # Контейнер для размещения на нем информации
         self.data_container = ctk.CTkScrollableFrame(
             master=self,
